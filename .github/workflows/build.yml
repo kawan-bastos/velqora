@@ -33,6 +33,15 @@ jobs:
         run: |
           dotnet run --project tests/PresetEditingTests.csproj -c Release -- $env:RUNNER_TEMP
           if ($LASTEXITCODE -ne 0) { throw 'Testes de edição de presets falharam.' }
+      - name: Testar trajetórias, conversão de força e atualizador
+        shell: pwsh
+        run: |
+          dotnet run --project tests/TrajectoryTests.csproj -c Release -- $env:RUNNER_TEMP
+          if ($LASTEXITCODE -ne 0) { throw 'Testes de trajetórias falharam.' }
+          dotnet run --project tests/PresetForceMigrationTests.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Migração de força falhou.' }
+          dotnet run --project tests/UpdateTests.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Testes do atualizador falharam.' }
       - name: Importar certificado legítimo (somente tags)
         if: startsWith(github.ref, 'refs/tags/')
         shell: pwsh
@@ -47,6 +56,11 @@ jobs:
         id: package
         shell: pwsh
         run: ./scripts/build-installer.ps1 -Sign:([bool]$env:VELQORA_SIGN_THUMBPRINT)
+      - name: Testar interface avançada sem iniciar o macro
+        shell: pwsh
+        env:
+          PACKAGE_RELEASE_DIR: ${{ steps.package.outputs.release_dir }}
+        run: powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File scripts/Test-TrajectoryEditor.ps1 -AssemblyPath "$env:PACKAGE_RELEASE_DIR/Velqora.exe"
       - name: Testar instalação com identidade isolada
         timeout-minutes: 10
         shell: pwsh

@@ -2,67 +2,44 @@
  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
  <StackPanel Margin="28,12,24,20">
   <TextBlock Text="Avançada" FontSize="28" FontWeight="SemiBold"/>
-  <TextBlock Text="Editor de trajetória • monte e visualize o movimento ao longo do tempo" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,18"/>
+  <TextBlock Text="Editor de trajetória" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,18"/>
   <Grid Margin="0,0,0,16"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="1.4*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
    <StackPanel><TextBlock Text="Jogo" Margin="0,0,0,6"/><ComboBox x:Name="Games" Style="{StaticResource ComboStyle}" SelectionChanged="GameChanged" AutomationProperties.Name="Jogo da trajetória"/></StackPanel>
    <StackPanel Grid.Column="1" Margin="12,0,0,0"><TextBlock Text="Preset" Margin="0,0,0,6"/><ComboBox x:Name="Profiles" Style="{StaticResource ComboStyle}" SelectionChanged="ProfileChanged" DisplayMemberPath="Label" AutomationProperties.Name="Preset da trajetória"/></StackPanel>
    <StackPanel Grid.Column="2" Margin="12,0,0,0"><TextBlock Text="Arma" Margin="0,0,0,6"/><ComboBox x:Name="Slot" Style="{StaticResource ComboStyle}" SelectionChanged="SlotChanged" SelectedIndex="0" AutomationProperties.Name="Arma da trajetória"><ComboBoxItem Content="Primária"/><ComboBoxItem Content="Secundária"/></ComboBox></StackPanel>
   </Grid>
-  <TextBlock x:Name="LiveTestStatus" Text="Teste temporário: os ajustes válidos já valem no macro antes de salvar. Desfazer também atualiza o teste. Ao sair sem salvar, volta a configuração salva." TextWrapping="Wrap" Foreground="{StaticResource AccentBrightBrush}" Margin="0,0,0,14"/>
-  <CheckBox x:Name="UseTrajectory" Content="Usar trajetória avançada nesta arma (desmarque para usar o básico)" Checked="OptionsChanged" Unchecked="OptionsChanged" Foreground="{StaticResource TextBrush}" Margin="0,0,0,16"/>
+  <StackPanel Orientation="Horizontal" Margin="0,0,0,16"><CheckBox x:Name="UseTrajectory" Content="Usar trajetória avançada" Checked="OptionsChanged" Unchecked="OptionsChanged" Foreground="{StaticResource TextBrush}"/><Button Content="?" Style="{StaticResource HelpIconButtonStyle}" AutomationProperties.Name="Ajuda sobre trajetória avançada"><Button.ToolTip><ToolTip><TextBlock Text="Substitui o movimento básico desta arma. Alterações válidas já podem ser testadas antes de salvar. Desfazer permite comparar; Salvar no preset mantém o resultado. Desmarcar usa o básico sem apagar os pontos." TextWrapping="Wrap" MaxWidth="340"/></ToolTip></Button.ToolTip></Button></StackPanel>
   <Border Style="{StaticResource CardStyle}" Padding="16" Margin="0,0,0,16">
-   <Expander x:Name="DrawingSection" Header="✎ Desenhar trajetória • experimental" Foreground="{StaticResource AccentBrightBrush}" FontSize="14">
+   <Expander x:Name="DrawingSection" Header="Desenhar trajetória" Foreground="{StaticResource AccentBrightBrush}" FontSize="14">
     <local:TrajectoryDrawingEditor x:Name="Drawing" Margin="0,14,0,0"/>
    </Expander>
   </Border>
   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="1.35*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*" MinWidth="320"/></Grid.ColumnDefinitions>
    <Border Style="{StaticResource CardStyle}" Padding="16"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="340"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-    <TextBlock Text="⌖  Pré-visualização" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,12"/>
+    <StackPanel Orientation="Horizontal" Margin="0,0,0,12"><TextBlock Text="⌖  Pré-visualização" FontSize="17" FontWeight="SemiBold"/><Button Content="?" Style="{StaticResource HelpIconButtonStyle}" AutomationProperties.Name="Ajuda sobre a prévia"><Button.ToolTip><ToolTip><TextBlock Text="Mostra o deslocamento acumulado em pixels com escala visual automática. Iniciar, reiniciar e a barra de tempo controlam apenas a animação, sem mover o mouse. A prévia inclui um segundo após o último ponto para mostrar o comportamento final." TextWrapping="Wrap" MaxWidth="340"/></ToolTip></Button.ToolTip></Button></StackPanel>
     <local:TrajectoryPlot x:Name="Plot" Grid.Row="1"/>
     <StackPanel Grid.Row="2" Margin="0,16,0,0">
-     <WrapPanel><Button x:Name="Play" Content="▶ Iniciar" Click="PlayClick" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,0"/><Button Content="↺ Reiniciar" Click="RestartClick" Style="{StaticResource SecondaryButtonStyle}"/><TextBlock x:Name="Clock" Margin="14,0,0,0" VerticalAlignment="Center"/></WrapPanel>
+     <WrapPanel><Button x:Name="Play" Content="Iniciar" Click="PlayClick" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,0"/><Button Content="Reiniciar" Click="RestartClick" Style="{StaticResource SecondaryButtonStyle}"/><TextBlock x:Name="Clock" Margin="14,0,0,0" VerticalAlignment="Center"/></WrapPanel>
      <Slider x:Name="Scrub" Minimum="0" Maximum="1000" ValueChanged="ScrubChanged" Margin="0,12,0,0" AutomationProperties.Name="Tempo da prévia"/>
      <TextBlock x:Name="TrajectoryMetrics" TextWrapping="Wrap" Margin="0,8,0,0" Foreground="{StaticResource MutedBrush}"/>
      <TextBlock x:Name="Velocity" TextWrapping="Wrap" Margin="0,8,0,0" Foreground="{StaticResource AccentBrightBrush}"/>
-     <TextBlock Text="A prévia inclui 1 segundo após o último ponto para demonstrar a fase final." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0"/>
-     <TextBlock Text="Deslocamento acumulado em px • a prévia não move o mouse." Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0"/>
     </StackPanel>
    </Grid></Border>
    <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="16"><StackPanel>
-    <TextBlock Text="ϟ  Linha do tempo" FontSize="17" FontWeight="SemiBold"/>
+    <StackPanel Orientation="Horizontal"><TextBlock Text="ϟ  Linha do tempo" FontSize="17" FontWeight="SemiBold"/><Button Content="?" Style="{StaticResource HelpIconButtonStyle}" AutomationProperties.Name="Ajuda sobre a linha do tempo"><Button.ToolTip><ToolTip><TextBlock Text="Selecione um ponto no gráfico ou na linha do tempo. Arraste os marcadores para ajustar o tempo. O primeiro ponto começa em 0 ms." TextWrapping="Wrap" MaxWidth="340"/></ToolTip></Button.ToolTip></Button></StackPanel>
     <local:TrajectoryTimeline x:Name="Timeline" Height="76" Margin="0,10,0,8"/>
-    <TextBlock Text="Selecione um ponto; arraste os marcadores para ajustar o tempo." Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap"/>
-    <TextBlock Text="◇  Ponto selecionado" FontSize="15" Margin="0,18,0,10"/>
+    <StackPanel Orientation="Horizontal" Margin="0,18,0,10"><TextBlock Text="◇  Ponto selecionado" FontSize="15"/><Button Content="?" Style="{StaticResource HelpIconButtonStyle}" AutomationProperties.Name="Ajuda sobre os valores do ponto"><Button.ToolTip><ToolTip><TextBlock Text="Edite apenas este ponto. Na vertical, uma unidade equivale a 100 px/s; na lateral, a 10 px/s. Horizontal positivo move à direita; vertical positivo move para baixo. Use zero nos dois eixos para uma fase parada." TextWrapping="Wrap" MaxWidth="340"/></ToolTip></Button.ToolTip></Button></StackPanel>
     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="155"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="44"/><RowDefinition Height="44"/><RowDefinition Height="44"/></Grid.RowDefinitions>
      <TextBlock Text="Tempo (ms)" VerticalAlignment="Center"/><TextBox x:Name="PointTime" Grid.Column="1" Style="{StaticResource FieldStyle}" TextChanged="PointTextChanged" AutomationProperties.Name="Tempo em milissegundos"/>
-     <TextBlock Grid.Row="1" Text="Horizontal (px/s)" VerticalAlignment="Center"/><TextBox x:Name="PointX" Grid.Row="1" Grid.Column="1" Style="{StaticResource FieldStyle}" TextChanged="PointTextChanged" AutomationProperties.Name="Movimento horizontal"/>
-     <TextBlock Grid.Row="2" Text="Vertical (px/s)" VerticalAlignment="Center"/><TextBox x:Name="PointY" Grid.Row="2" Grid.Column="1" Style="{StaticResource FieldStyle}" TextChanged="PointTextChanged" AutomationProperties.Name="Movimento vertical"/>
+     <TextBlock Grid.Row="1" Text="Horizontal" VerticalAlignment="Center"/><TextBox x:Name="PointX" Grid.Row="1" Grid.Column="1" Style="{StaticResource FieldStyle}" TextChanged="PointTextChanged" AutomationProperties.Name="Movimento horizontal"/>
+     <TextBlock Grid.Row="2" Text="Vertical" VerticalAlignment="Center"/><TextBox x:Name="PointY" Grid.Row="2" Grid.Column="1" Style="{StaticResource FieldStyle}" TextChanged="PointTextChanged" AutomationProperties.Name="Movimento vertical"/>
     </Grid>
-    <WrapPanel Margin="0,12,0,14"><Button Content="＋ Adicionar ponto" Click="AddClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"/><Button x:Name="Remove" Content="Remover" Click="RemoveClick" Style="{StaticResource SecondaryButtonStyle}"/></WrapPanel>
-    <TextBlock Text="Interpolação" Margin="0,0,0,6"/><ComboBox x:Name="Interpolation" Style="{StaticResource ComboStyle}" SelectedIndex="0" SelectionChanged="OptionsChanged" AutomationProperties.Name="Interpolação"><ComboBoxItem Content="Linear — transição uniforme"/><ComboBoxItem Content="Suave — transição gradual"/><ComboBoxItem Content="Em degraus — manter até o próximo ponto"/></ComboBox>
-    <TextBlock x:Name="InterpolationHelp" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0"/>
-    <Button Content="Suavizar passagens de desenho antigo" Click="SmoothPassagesClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,10,0,0" ToolTip="Recalcula desenhos antigos com paradas alternadas, preservando posições e duração. Pode ser desfeito."/>
-    <TextBlock Text="Ao terminar" Margin="0,12,0,6"/><ComboBox x:Name="Ending" Style="{StaticResource ComboStyle}" SelectedIndex="0" SelectionChanged="OptionsChanged" AutomationProperties.Name="Comportamento final"><ComboBoxItem Content="Zero — parar todo movimento"/><ComboBoxItem Content="Manter valores do último ponto"/></ComboBox>
-    <TextBlock x:Name="EndingHelp" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0"/>
+    <WrapPanel Margin="0,12,0,14"><Button Content="Adicionar ponto" Click="AddClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"/><Button x:Name="Remove" Content="Remover" Click="RemoveClick" Style="{StaticResource SecondaryButtonStyle}"/></WrapPanel>
+    <StackPanel Orientation="Horizontal" Margin="0,0,0,6"><TextBlock Text="Interpolação"/><Button Content="?" Style="{StaticResource HelpIconButtonStyle}" AutomationProperties.Name="Ajuda sobre interpolação"><Button.ToolTip><ToolTip><TextBlock x:Name="InterpolationHelp" Text="" TextWrapping="Wrap" MaxWidth="340"/></ToolTip></Button.ToolTip></Button></StackPanel><ComboBox x:Name="Interpolation" Style="{StaticResource ComboStyle}" SelectedIndex="0" SelectionChanged="OptionsChanged" AutomationProperties.Name="Interpolação"><ComboBoxItem Content="Linear"/><ComboBoxItem Content="Suave"/><ComboBoxItem Content="Em degraus"/></ComboBox>
+    <StackPanel Orientation="Horizontal" Margin="0,12,0,6"><TextBlock Text="Ao terminar"/><Button Content="?" Style="{StaticResource HelpIconButtonStyle}" AutomationProperties.Name="Ajuda sobre o comportamento final"><Button.ToolTip><ToolTip><TextBlock x:Name="EndingHelp" Text="" TextWrapping="Wrap" MaxWidth="340"/></ToolTip></Button.ToolTip></Button></StackPanel><ComboBox x:Name="Ending" Style="{StaticResource ComboStyle}" SelectedIndex="0" SelectionChanged="OptionsChanged" AutomationProperties.Name="Comportamento final"><ComboBoxItem Content="Parar"/><ComboBoxItem Content="Manter último valor"/></ComboBox>
    </StackPanel></Border>
   </Grid>
-  <Border Style="{StaticResource CardStyle}" Margin="0,16,0,0" Padding="16"><StackPanel><TextBlock Text="Visão geral • horizontal em dourado, vertical em cinza" Margin="0,0,0,8"/><local:TrajectoryTimeline x:Name="Overview" Height="60" IsHitTestVisible="False"/><TextBlock Text="Tempo: desde o início da pressão contínua. Horizontal: positivo à direita; vertical: positivo para baixo. Para uma fase reduzida ou só vertical, adicione pontos com valores menores ou horizontal zero. Para uma fase sem movimento, use ambos em zero." Foreground="{StaticResource MutedBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0"/></StackPanel></Border>
-  <Border Style="{StaticResource CardStyle}" Margin="0,16,0,0" Padding="16"><StackPanel>
-   <TextBlock Text="Ajustar horizontal e vertical separadamente" FontSize="15" FontWeight="SemiBold"/>
-   <TextBlock Text="Corrija somente o eixo que precisa mudar. Cada botão atua em todos os pontos daquele eixo e preserva o outro e os tempos. Fator 2 dobra, 0,5 reduz à metade e 1 mantém. Cada aplicação atua sobre os valores atuais; Desfazer recupera o ajuste anterior." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,12"/>
-   <WrapPanel Margin="0,0,0,10">
-    <TextBlock Text="Horizontal • fator" Width="155" VerticalAlignment="Center"/>
-    <TextBox x:Name="HorizontalAdjustment" Text="1" Width="100" Style="{StaticResource FieldStyle}" Margin="0,0,12,0" AutomationProperties.Name="Fator somente horizontal"/>
-    <Button Content="Aplicar só horizontal" Click="HorizontalAdjustmentClick" Style="{StaticResource SecondaryButtonStyle}"/>
-   </WrapPanel>
-   <WrapPanel>
-    <TextBlock Text="Vertical • fator" Width="155" VerticalAlignment="Center"/>
-    <TextBox x:Name="VerticalAdjustment" Text="1" Width="100" Style="{StaticResource FieldStyle}" Margin="0,0,12,0" AutomationProperties.Name="Fator somente vertical"/>
-    <Button Content="Aplicar só vertical" Click="VerticalAdjustmentClick" Style="{StaticResource SecondaryButtonStyle}"/>
-   </WrapPanel>
-   <TextBlock Text="A escala do desenho define seu tamanho inicial. Estes ajustes corrigem cada eixo após aplicar o desenho. A prévia ajusta a escala visual automaticamente; confira os valores e o deslocamento total." Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" FontSize="11" Margin="0,10,0,0"/>
-  </StackPanel></Border>
-  <Grid Margin="0,18,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><WrapPanel><Button Content="↶ Desfazer" Click="UndoClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0"/><Button Content="Restaurar salvo" Click="RestoreClick" Style="{StaticResource SecondaryButtonStyle}"/></WrapPanel><Button Grid.Column="1" Content="Salvar no preset" Click="SaveClick" Style="{StaticResource PrimaryButtonStyle}"/></Grid>
+  <Grid Margin="0,18,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><WrapPanel><Button Content="Desfazer" Click="UndoClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0"/><Button Content="Restaurar salvo" Click="RestoreClick" Style="{StaticResource SecondaryButtonStyle}"/></WrapPanel><Button Grid.Column="1" Content="Salvar no preset" Click="SaveClick" Style="{StaticResource PrimaryButtonStyle}"/></Grid>
   <TextBlock x:Name="Status" TextWrapping="Wrap" Margin="0,10,0,0" Foreground="{StaticResource AccentBrightBrush}"/>
  </StackPanel></ScrollViewer>
 </UserControl>

@@ -64,7 +64,6 @@ namespace MacroDoButler
             IntervalText.Text=((int)IntervalSlider.Value).ToString();
             SecondaryIntervalText.Text=((int)SecondaryIntervalSlider.Value).ToString();
             presetService = new PresetService(dataDirectory);
-            UserDataPathText.Text = "Dados: " + dataDirectory;
             updateService=new UpdateService(GetApplicationVersion(),Process.GetCurrentProcess().MainModule.FileName,dataDirectory);
             updatePreferencesStorage=new UpdatePreferencesStorageService(dataDirectory);updatePreferences=updatePreferencesStorage.Load();
             backupService = new PresetBackupService(presetService.FilePath);
@@ -74,7 +73,7 @@ namespace MacroDoButler
 
             IList<Preset> initialPresets = presetService.LoadAll();
             RefreshOrganization(initialPresets.FirstOrDefault());
-            if (initialPresets.Count == 0) { PrimaryVerticalSlider.Value=350; PrimaryHorizontalSlider.Value=0; SecondaryVerticalSlider.Value=0; SecondaryHorizontalSlider.Value=0; RequireRight.IsChecked=true; }
+            if (initialPresets.Count == 0) { PrimaryVerticalSlider.Value=4; PrimaryHorizontalSlider.Value=0; SecondaryVerticalSlider.Value=0; SecondaryHorizontalSlider.Value=0; RequireRight.IsChecked=true; }
             UpdateStatus();
             UpdateWeaponStatus();
             Loaded += LoadGameArtwork;
@@ -224,8 +223,8 @@ namespace MacroDoButler
                 Trajectory = selectedPreset == null ? null : (secondaryActive ? selectedPreset.SecondaryTrajectory : selectedPreset.PrimaryTrajectory),
                 Enabled = enabled && !(AdvancedPage.Visibility==Visibility.Visible && AdvancedPage.IsDrawingOpen),
                 RequireRightButton = RequireRight.IsChecked == true,
-                HorizontalPixelsPerSecond = (int)(secondaryActive ? SecondaryHorizontalSlider.Value : PrimaryHorizontalSlider.Value),
-                VerticalPixelsPerSecond = (int)(secondaryActive ? SecondaryVerticalSlider.Value : PrimaryVerticalSlider.Value),
+                HorizontalPixelsPerSecond = ForceUnits.ToPixelsInt(secondaryActive ? SecondaryHorizontalSlider.Value : PrimaryHorizontalSlider.Value,true),
+                VerticalPixelsPerSecond = ForceUnits.ToPixelsInt(secondaryActive ? SecondaryVerticalSlider.Value : PrimaryVerticalSlider.Value),
                 IntervalMilliseconds = Math.Max(2, (int)(secondaryActive ? SecondaryIntervalSlider.Value : IntervalSlider.Value))
             };
         }
@@ -243,10 +242,10 @@ namespace MacroDoButler
                 if(existing!=null&&!samePreset){ShowFeedback("Já existe um preset com esse nome neste jogo. Escolha outro nome ou selecione o existente.",false);return;}
                 Preset preset = selectedPreset == null ? new Preset { GameName=game, CharacterName="Preset", WeaponName="Arma não definida" } : ClonePreset(selectedPreset);
                 preset.GameName=game; preset.CharacterName="Preset"; preset.WeaponName="Arma não definida"; preset.Name = name;
-                preset.PrimaryVertical = (int)PrimaryVerticalSlider.Value;
-                preset.PrimaryHorizontal = (int)PrimaryHorizontalSlider.Value;
-                preset.SecondaryVertical = (int)SecondaryVerticalSlider.Value;
-                preset.SecondaryHorizontal = (int)SecondaryHorizontalSlider.Value;
+                preset.PrimaryVertical = ForceUnits.ToPixelsInt(PrimaryVerticalSlider.Value);
+                preset.PrimaryHorizontal = ForceUnits.ToPixelsInt(PrimaryHorizontalSlider.Value,true);
+                preset.SecondaryVertical = ForceUnits.ToPixelsInt(SecondaryVerticalSlider.Value);
+                preset.SecondaryHorizontal = ForceUnits.ToPixelsInt(SecondaryHorizontalSlider.Value,true);
                 preset.IntervalMilliseconds = (int)IntervalSlider.Value;
                 preset.SecondaryIntervalMilliseconds = (int)SecondaryIntervalSlider.Value;
                 preset.RequireRightButton = RequireRight.IsChecked == true;
@@ -335,6 +334,19 @@ namespace MacroDoButler
             }
         }
 
+        private void OpenDataFolder_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName=Path.GetDirectoryName(presetService.FilePath),
+                    UseShellExecute=true
+                });
+            }
+            catch(Exception exception) { ShowTransferFeedback("Não foi possível abrir a pasta de dados: "+exception.Message,false); }
+        }
+
         private void CreateBackup_Click(object sender, RoutedEventArgs e)
         {
             try { string backup = backupService.CreateBackup(); ShowTransferFeedback(backup == null ? "O JSON ainda não foi criado." : "Backup criado: " + backup, true); }
@@ -391,8 +403,8 @@ namespace MacroDoButler
             GameSelector.SelectedItem = preset.GameName;
             RefreshPresetsForGame(preset.GameName,preset.Name);
             updatingSelectors = false;
-            PrimaryVerticalSlider.Value = Clamp(preset.PrimaryVertical, 0, 10000); PrimaryHorizontalSlider.Value = Clamp(preset.PrimaryHorizontal, -5000, 5000);
-            SecondaryVerticalSlider.Value = Clamp(preset.SecondaryVertical, 0, 10000); SecondaryHorizontalSlider.Value = Clamp(preset.SecondaryHorizontal, -5000, 5000);
+            PrimaryVerticalSlider.Value = ForceUnits.Display(Clamp(preset.PrimaryVertical, 0, 10000)); PrimaryHorizontalSlider.Value = ForceUnits.Display(Clamp(preset.PrimaryHorizontal, -5000, 5000),true);
+            SecondaryVerticalSlider.Value = ForceUnits.Display(Clamp(preset.SecondaryVertical, 0, 10000)); SecondaryHorizontalSlider.Value = ForceUnits.Display(Clamp(preset.SecondaryHorizontal, -5000, 5000),true);
             IntervalSlider.Value = preset.IntervalMilliseconds >= 2 ? Clamp(preset.IntervalMilliseconds, 2, 50) : 7;
             SecondaryIntervalSlider.Value = Clamp(preset.SecondaryIntervalMilliseconds ?? (int)IntervalSlider.Value, 2, 50);
             RequireRight.IsChecked = preset.RequireRightButton;
@@ -458,6 +470,7 @@ namespace MacroDoButler
         }
         private static Preset ClonePreset(Preset p){return new Preset{PrimaryTrajectory=Trajectory.Normalize(p.PrimaryTrajectory),SecondaryTrajectory=Trajectory.Normalize(p.SecondaryTrajectory),GameName=p.GameName,CharacterName=p.CharacterName,WeaponName=p.WeaponName,WeaponSlot=p.WeaponSlot,Name=p.Name,PrimaryVertical=p.PrimaryVertical,PrimaryHorizontal=p.PrimaryHorizontal,SecondaryVertical=p.SecondaryVertical,SecondaryHorizontal=p.SecondaryHorizontal,IntervalMilliseconds=p.IntervalMilliseconds,SecondaryIntervalMilliseconds=p.SecondaryIntervalMilliseconds,RequireRightButton=p.RequireRightButton,CreatedAt=p.CreatedAt,UpdatedAt=p.UpdatedAt};}
 
+        private bool editingNumericText;
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             Slider slider = sender as Slider;
@@ -472,7 +485,13 @@ namespace MacroDoButler
                 case "Interval": target = IntervalText; break;
                 case "SecondaryInterval": target = SecondaryIntervalText; break;
             }
-            if (target != null) target.Text = ((int)slider.Value).ToString();
+            if (target != null && !editingNumericText)
+            {
+                string tag=slider.Tag as string;
+                bool horizontal=tag?.Contains("Horizontal")==true;
+                target.Text=tag=="Interval"||tag=="SecondaryInterval"?((int)slider.Value).ToString():
+                    ForceUnits.Format(slider.Value*ForceUnits.PixelsPerUnitFor(horizontal),horizontal);
+            }
             if(IsInitialized)UpdateMacroSummary();
 
         }
@@ -481,11 +500,11 @@ namespace MacroDoButler
         {
             TextBox textBox = sender as TextBox;
             int value;
-            if (textBox == null || !int.TryParse(textBox.Text, out value)) { SyncAllText(); return; }
-            if (textBox == PrimaryVerticalText) PrimaryVerticalSlider.Value = Clamp(value, 0, 10000);
-            else if (textBox == PrimaryHorizontalText) PrimaryHorizontalSlider.Value = Clamp(value, -5000, 5000);
-            else if (textBox == SecondaryVerticalText) SecondaryVerticalSlider.Value = Clamp(value, 0, 10000);
-            else if (textBox == SecondaryHorizontalText) SecondaryHorizontalSlider.Value = Clamp(value, -5000, 5000);
+            if (textBox == null || !TryReadNumericText(textBox, out value)) { SyncAllText(); return; }
+            if (textBox == PrimaryVerticalText) PrimaryVerticalSlider.Value = ForceUnits.Display(Clamp(value, 0, 10000));
+            else if (textBox == PrimaryHorizontalText) PrimaryHorizontalSlider.Value = ForceUnits.Display(Clamp(value, -5000, 5000),true);
+            else if (textBox == SecondaryVerticalText) SecondaryVerticalSlider.Value = ForceUnits.Display(Clamp(value, 0, 10000));
+            else if (textBox == SecondaryHorizontalText) SecondaryHorizontalSlider.Value = ForceUnits.Display(Clamp(value, -5000, 5000),true);
             else if (textBox == IntervalText) IntervalSlider.Value = Clamp(value, 2, 50);
             else if (textBox == SecondaryIntervalText) SecondaryIntervalSlider.Value = Clamp(value, 2, 50);
             SyncAllText();
@@ -496,21 +515,34 @@ namespace MacroDoButler
             if (!IsInitialized) return;
             TextBox textBox = sender as TextBox;
             int value;
-            if (textBox == null || !int.TryParse(textBox.Text, out value)) return;
-            if (textBox == PrimaryVerticalText) PrimaryVerticalSlider.Value = Clamp(value, 0, 10000);
-            else if (textBox == PrimaryHorizontalText) PrimaryHorizontalSlider.Value = Clamp(value, -5000, 5000);
-            else if (textBox == SecondaryVerticalText) SecondaryVerticalSlider.Value = Clamp(value, 0, 10000);
-            else if (textBox == SecondaryHorizontalText) SecondaryHorizontalSlider.Value = Clamp(value, -5000, 5000);
-            else if (textBox == IntervalText) IntervalSlider.Value = Clamp(value, 2, 50);
-            else if (textBox == SecondaryIntervalText) SecondaryIntervalSlider.Value = Clamp(value, 2, 50);
+            if (textBox == null || !TryReadNumericText(textBox, out value)) return;
+            editingNumericText=true;
+            try
+            {
+                if (textBox == PrimaryVerticalText) PrimaryVerticalSlider.Value = ForceUnits.Display(Clamp(value, 0, 10000));
+                else if (textBox == PrimaryHorizontalText) PrimaryHorizontalSlider.Value = ForceUnits.Display(Clamp(value, -5000, 5000),true);
+                else if (textBox == SecondaryVerticalText) SecondaryVerticalSlider.Value = ForceUnits.Display(Clamp(value, 0, 10000));
+                else if (textBox == SecondaryHorizontalText) SecondaryHorizontalSlider.Value = ForceUnits.Display(Clamp(value, -5000, 5000),true);
+                else if (textBox == IntervalText) IntervalSlider.Value = Clamp(value, 2, 50);
+                else if (textBox == SecondaryIntervalText) SecondaryIntervalSlider.Value = Clamp(value, 2, 50);
+            }
+            finally { editingNumericText=false; }
         }
 
+        private bool TryReadNumericText(TextBox textBox,out int value)
+        {
+            if(textBox==IntervalText||textBox==SecondaryIntervalText)return int.TryParse(textBox.Text,out value);
+            double number; value=0;
+            bool vertical=textBox==PrimaryVerticalText||textBox==SecondaryVerticalText;
+            if(!ForceUnits.TryParse(textBox.Text,out number)||number < (vertical?0:-500)||number > (vertical?100:500))return false;
+            value=ForceUnits.ToPixelsInt(number,!vertical); return true;
+        }
         private void SyncAllText()
         {
-            PrimaryVerticalText.Text = ((int)PrimaryVerticalSlider.Value).ToString();
-            PrimaryHorizontalText.Text = ((int)PrimaryHorizontalSlider.Value).ToString();
-            SecondaryVerticalText.Text = ((int)SecondaryVerticalSlider.Value).ToString();
-            SecondaryHorizontalText.Text = ((int)SecondaryHorizontalSlider.Value).ToString();
+            PrimaryVerticalText.Text = ForceUnits.Format(PrimaryVerticalSlider.Value*ForceUnits.PixelsPerUnit);
+            PrimaryHorizontalText.Text = ForceUnits.Format(PrimaryHorizontalSlider.Value*ForceUnits.PixelsPerUnitFor(true),true);
+            SecondaryVerticalText.Text = ForceUnits.Format(SecondaryVerticalSlider.Value*ForceUnits.PixelsPerUnit);
+            SecondaryHorizontalText.Text = ForceUnits.Format(SecondaryHorizontalSlider.Value*ForceUnits.PixelsPerUnitFor(true),true);
             IntervalText.Text = ((int)IntervalSlider.Value).ToString();
             SecondaryIntervalText.Text = ((int)SecondaryIntervalSlider.Value).ToString();
         }
@@ -527,8 +559,8 @@ namespace MacroDoButler
         {
             if(MovementSummary!=null && PrimaryHorizontalSlider!=null && SecondaryHorizontalSlider!=null)
                 MovementSummary.ShowSettings(selectedPreset,secondaryActive,enabled,
-                    (int)(secondaryActive?SecondaryHorizontalSlider.Value:PrimaryHorizontalSlider.Value),
-                    (int)(secondaryActive?SecondaryVerticalSlider.Value:PrimaryVerticalSlider.Value));
+                    ForceUnits.ToPixelsInt(secondaryActive?SecondaryHorizontalSlider.Value:PrimaryHorizontalSlider.Value,true),
+                    ForceUnits.ToPixelsInt(secondaryActive?SecondaryVerticalSlider.Value:PrimaryVerticalSlider.Value));
             bool primaryEnabled = enabled && !secondaryActive;
             bool secondaryEnabled = enabled && secondaryActive;
             SummaryPrimaryState.Text = primaryEnabled ? "Ativada" : "Desativada";

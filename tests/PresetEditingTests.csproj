@@ -6,7 +6,7 @@
     <Compile Include="..\src\Models\Preset.cs"/><Compile Include="..\src\Models\Trajectory.cs"/><Compile Include="..\src\Models\PresetEditDraft.cs"/>
     <Compile Include="..\src\Models\MovementSettings.cs"/>
     <Compile Include="..\src\Models\PresetTransferModels.cs"/>
-    <Compile Include="..\src\Services\PresetService.cs"/><Compile Include="..\src\Services\PresetEditingService.cs"/>
+    <Compile Include="..\src\Models\PresetForceUnits.cs"/><Compile Include="..\src\Services\PresetForceMigration.cs"/><Compile Include="..\src\Services\PresetService.cs"/><Compile Include="..\src\Services\PresetEditingService.cs"/>
     <Compile Include="..\src\Services\PresetTransferService.cs"/><Compile Include="..\src\Services\PresetBackupService.cs"/>
   </ItemGroup>
 </Project>

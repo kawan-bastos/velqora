@@ -12,7 +12,7 @@ internal sealed class PresetTransferService
     internal void Export(string path, IList<Preset> presets)
     {
         foreach (Preset preset in presets) if (!IsValidPreset(preset)) throw new InvalidDataException("Um preset atual contém valores inválidos e não pode ser exportado.");
-        var export = new PresetExportFile { FormatVersion = 2, Application = "Velqora", ExportedAt = DateTime.Now, Presets = new List<Preset>(presets) };
+        var export = new PresetExportFile { FormatVersion = PresetService.FormatFor(presets), Application = "Velqora", ExportedAt = DateTime.Now, Presets = new List<Preset>(presets) };
         string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
@@ -33,7 +33,7 @@ internal sealed class PresetTransferService
                 using (var stream = File.OpenRead(path))
                 {
                     var file = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(PresetImportFile)).ReadObject(stream) as PresetImportFile;
-                    if (file == null || file.FormatVersion != 2 || file.Presets == null) throw new PresetImportException("O JSON de presets tem uma versão ou estrutura inválida.");
+                    if (file == null || !PresetService.IsSupportedFormat(file.FormatVersion) || file.Presets == null) throw new PresetImportException("O JSON de presets tem uma versão ou estrutura inválida.");
                     if (file.Presets.Any(p => !IsValidPreset(p))) throw new PresetImportException("Há presets com valores ou categorias inválidos.");
                     return file.Presets.Select(Clone).ToList();
                 }

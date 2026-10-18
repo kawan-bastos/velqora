@@ -6,8 +6,10 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 
 [DataContract]
-internal sealed class PresetStore
+internal sealed class PresetStore : IExtensibleDataObject
 {
+    public ExtensionDataObject ExtensionData { get; set; }
+    [DataMember(Name = "forceUnitsVersion", EmitDefaultValue = false)] public int ForceUnitsVersion { get; set; }
     [DataMember(Name = "formatVersion")] public int FormatVersion { get; set; }
     [DataMember(Name = "presets")] public List<Preset> Presets { get; set; }
     [DataMember(Name = "games")] public List<string> Games { get; set; }
@@ -15,12 +17,18 @@ internal sealed class PresetStore
 
 internal sealed class PresetService
 {
+    // Version 3 explicitly protects advanced fields from v2-only applications that discard them.
+    internal static bool IsSupportedFormat(int version) { return version==2||version==3; }
+    internal static int FormatFor(IEnumerable<Preset> presets) { return presets.Any(p=>p!=null&&(p.PrimaryTrajectory!=null||p.SecondaryTrajectory!=null))?3:2; }
     internal const string UncategorizedGameName = "Não categorizado";
     private readonly string directory;
     private readonly string filePath;
     private readonly string legacyPath;
-    internal PresetService(string directory)
+    private readonly bool wholeForceUnits;
+    internal PresetService(string directory) : this(directory,true) { }
+    internal PresetService(string directory,bool wholeForceUnits)
     {
+        this.wholeForceUnits=wholeForceUnits;
         this.directory = directory;
         filePath = Path.Combine(directory, "presets.json");
         legacyPath = Path.Combine(directory, "presets.cfg");
@@ -31,6 +39,7 @@ internal sealed class PresetService
 
     internal IList<string> LoadGames()
     {
+        if(wholeForceUnits) PresetForceMigration.Ensure(filePath);
         var games = new List<string>();
         if (File.Exists(filePath))
         {
@@ -109,6 +118,7 @@ internal sealed class PresetService
 
     internal IList<Preset> LoadAll()
     {
+        if(wholeForceUnits) PresetForceMigration.Ensure(filePath);
         if (File.Exists(filePath))
         {
             try
@@ -117,7 +127,7 @@ internal sealed class PresetService
                 {
                     var serializer = new DataContractJsonSerializer(typeof(PresetStore));
                     var store = serializer.ReadObject(stream) as PresetStore;
-                    if (store == null || store.FormatVersion != 2 || store.Presets == null) throw new InvalidDataException("Formato JSON de presets inválido.");
+                    if (store == null || !IsSupportedFormat(store.FormatVersion) || store.Presets == null) throw new InvalidDataException("Formato JSON de presets inválido.");
                     return store.Presets.Select(Normalize).ToList();
                 }
             }
@@ -180,11 +190,13 @@ internal sealed class PresetService
     private void WriteAll(IEnumerable<Preset> presets, IEnumerable<string> explicitGames = null)
     {
         Directory.CreateDirectory(directory);
+        if(wholeForceUnits) PresetForceMigration.Ensure(filePath);
         List<Preset> list=presets.Select(Normalize).ToList();
+        if(wholeForceUnits) foreach(var preset in list) PresetForceUnits.Round(preset);
         IList<string> games=explicitGames==null?LoadGames():explicitGames.ToList();
         var associatedGames=list.Select(p=>p.GameName).Where(g=>!IsUncategorized(g));
         var storedGames=games.Where(g=>!IsUncategorized(g)).Concat(associatedGames);
-        var store = new PresetStore { FormatVersion = 2, Presets = list, Games = storedGames.Where(g=>!string.IsNullOrWhiteSpace(g)).Distinct(StringComparer.OrdinalIgnoreCase).ToList() };
+        var store = new PresetStore { ForceUnitsVersion = wholeForceUnits?PresetForceUnits.Version:0, FormatVersion = FormatFor(list), Presets = list, Games = storedGames.Where(g=>!string.IsNullOrWhiteSpace(g)).Distinct(StringComparer.OrdinalIgnoreCase).ToList() };
         string temporary = filePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {

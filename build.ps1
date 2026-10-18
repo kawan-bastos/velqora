@@ -1,8 +1,8 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 
 $projectDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectFile = Join-Path $projectDirectory "MacroDoButler.csproj"
-$destination = Join-Path $projectDirectory "dist"
+$destination = Join-Path $projectDirectory "dist\portable"
 
 dotnet build $projectFile --configuration Release -warnaserror
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao compilar Velqora em Release.' }

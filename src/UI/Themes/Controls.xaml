@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ui="clr-namespace:MacroDoButler"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib"
                     xmlns:p="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework">
     <ui:ActionButtonTemplateSelector x:Key="ActionButtonTemplateSelector"/>
     <Color x:Key="BackgroundColor">#0C1012</Color>
@@ -292,7 +293,13 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ToolTip">
                     <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}" MaxWidth="340">
-                        <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" FontSize="{TemplateBinding FontSize}" TextWrapping="Wrap" MaxWidth="316" />
+                        <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" TextElement.Foreground="{TemplateBinding Foreground}" TextElement.FontSize="{TemplateBinding FontSize}" MaxWidth="316">
+                            <ContentPresenter.Resources>
+                                <DataTemplate DataType="{x:Type sys:String}">
+                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" MaxWidth="316" />
+                                </DataTemplate>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>

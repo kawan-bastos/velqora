@@ -53,7 +53,7 @@ namespace MacroDoButler
         {
             var picker=new OpenFileDialog { Title="Imagem de referência para desenho",Filter="Imagens|*.png;*.jpg;*.jpeg;*.bmp",CheckFileExists=true };
             if(picker.ShowDialog(Window.GetWindow(this))!=true)return;
-            try { LoadReferenceImage(picker.FileName); DrawingStatus.Text="Referência carregada • clique sobre a imagem para desenhar."; }
+            try { LoadReferenceImage(picker.FileName); DrawingStatus.Text="Referência carregada."; }
             catch(Exception ex) { DrawingStatus.Text="Não foi possível carregar a imagem: "+ex.Message; }
         }
         internal void LoadReferenceImage(string path)
@@ -78,37 +78,33 @@ namespace MacroDoButler
             updatingImageControls=true;
             ImageZoom.Value=Surface.ReferenceZoom;
             ImageZoomText.Text=(Surface.ReferenceZoom*100).ToString("0",CultureInfo.CurrentCulture)+"%";
-            ImageFlipVertical.IsChecked=Surface.ReferenceFlipVertical;
-            ImageFlipHorizontal.IsChecked=Surface.ReferenceFlipHorizontal;
             updatingImageControls=false;
         }
         private void ImageViewChanged(object sender,RoutedEventArgs e)
         {
             if(!ready||updatingImageControls)return;
-            Surface.ReferenceFlipVertical=ImageFlipVertical.IsChecked==true;
-            Surface.ReferenceFlipHorizontal=ImageFlipHorizontal.IsChecked==true;
             Surface.SetReferenceZoom(ImageZoom.Value);
         }
         private void RotateImageClick(object sender,RoutedEventArgs e)
         {
             Surface.ReferenceRotated=!Surface.ReferenceRotated; Surface.InvalidateVisual();
-            DrawingStatus.Text=Surface.ReferenceRotated?"Imagem girada 180° • os pontos continuam no lugar.":"Imagem na orientação original • os pontos continuam no lugar.";
+            DrawingStatus.Text=Surface.ReferenceRotated?"Imagem girada 180°.":"Orientação original.";
         }
-        private void ResetImageViewClick(object sender,RoutedEventArgs e) { Surface.ResetReferenceView(); DrawingStatus.Text="Imagem ajustada à área • zoom 100%, sem inversões."; }
+        private void ResetImageViewClick(object sender,RoutedEventArgs e) { Surface.ResetReferenceView(); DrawingStatus.Text="Imagem ajustada."; }
         internal void UpdateTimingHint(bool step)
         {
-            DrawingTimingHelp.Text="Área de 600 × 360 unidades. Escala 1: 100 unidades = 100 px de movimento. O tempo é distribuído pelo comprimento dos trechos. "+
+            DrawingTimingHelp.Text="Tempo total de 100 a 60000 ms, com no mínimo 2 ms por trecho. O tempo é distribuído pelo comprimento dos trechos. "+
                 (step?"Em degraus: velocidade constante em cada trecho, troca direta no próximo ponto, sem parar nas junções.":"Gradual: mantém velocidade entre os pontos, sem zerar em cada junção. Suave também faz a aceleração chegar continuamente às junções; a parada fica no final.");
         }
         private void ApplyClick(object sender,RoutedEventArgs e)
         {
             int duration; double scale;
-            if(!int.TryParse(DurationInput.Text,out duration)||(!double.TryParse(ScaleInput.Text,NumberStyles.Float,CultureInfo.CurrentCulture,out scale)&&!double.TryParse(ScaleInput.Text.Replace(',','.'),NumberStyles.Float,CultureInfo.InvariantCulture,out scale)))
-            { DrawingStatus.Text="Confira a duração e a escala do desenho."; return; }
+            if(!int.TryParse(DurationInput.Text,out duration)||!ForceUnits.TryParse(ScaleInput.Text,out scale)||scale<1||scale>10)
+            { DrawingStatus.Text="Use duração inteira e escala inteira entre 1 e 10."; return; }
             try
             {
                 var converted=DrawingTrajectoryConverter.Convert(Surface.Points,duration,scale,Invert.IsChecked==true,Smooth!=null&&Smooth(),Step!=null&&Step());
-                Apply?.Invoke(converted); HasChanges=false; DrawingStatus.Text="Desenho aplicado • confira a prévia antes de salvar.";
+                Apply?.Invoke(converted); HasChanges=false; DrawingStatus.Text="Desenho aplicado.";
             }
             catch(ArgumentException ex) { DrawingStatus.Text=ex.Message; }
         }
@@ -120,7 +116,7 @@ namespace MacroDoButler
         internal ImageSource ReferenceImage;
         internal Action BeforeEdit,Changed,ReferenceViewChanged;
         internal double ReferenceZoom=1, ReferenceOffsetX, ReferenceOffsetY;
-        internal bool ReferenceFlipHorizontal, ReferenceFlipVertical, ReferenceRotated;
+        internal bool ReferenceRotated;
         private bool panning;
         private Point lastPan;
         internal void SetReferenceZoom(double zoom)
@@ -135,7 +131,7 @@ namespace MacroDoButler
         internal void ResetReferenceView()
         {
             ReferenceZoom=1; ReferenceOffsetX=ReferenceOffsetY=0;
-            ReferenceFlipHorizontal=ReferenceFlipVertical=ReferenceRotated=false;
+            ReferenceRotated=false;
             InvalidateVisual(); ReferenceViewChanged?.Invoke();
         }
         internal Matrix ReferenceTransform
@@ -143,8 +139,8 @@ namespace MacroDoButler
             get
             {
                 var matrix=Matrix.Identity;
-                double sx=ReferenceZoom*(ReferenceFlipHorizontal?-1:1)*(ReferenceRotated?-1:1);
-                double sy=ReferenceZoom*(ReferenceFlipVertical?-1:1)*(ReferenceRotated?-1:1);
+                double sx=ReferenceZoom*(ReferenceRotated?-1:1);
+                double sy=ReferenceZoom*(ReferenceRotated?-1:1);
                 matrix.ScaleAt(sx,sy,ActualWidth/2,ActualHeight/2);
                 matrix.Translate(ReferenceOffsetX*Scale,ReferenceOffsetY*Scale);
                 return matrix;

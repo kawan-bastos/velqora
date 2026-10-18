@@ -4,8 +4,9 @@ using System.Linq;
 using System.Runtime.Serialization;
 
 [DataContract]
-internal sealed class TrajectoryPoint
+internal sealed class TrajectoryPoint : IExtensibleDataObject
 {
+    public ExtensionDataObject ExtensionData { get; set; }
     [DataMember(Name="timeMs")] public int TimeMs { get; set; }
     [DataMember(Name="horizontal")] public double Horizontal { get; set; }
     [DataMember(Name="vertical")] public double Vertical { get; set; }
@@ -14,8 +15,9 @@ internal sealed class TrajectoryPoint
 
 // Components are velocities in pixels/second, matching the existing basic settings.
 [DataContract]
-internal sealed class Trajectory
+internal sealed class Trajectory : IExtensibleDataObject
 {
+    public ExtensionDataObject ExtensionData { get; set; }
     internal const int MaxTime = 60000, MaxPoints = 128;
     [DataMember(Name="enabled")] public bool Enabled { get; set; }
     [DataMember(Name="step", EmitDefaultValue=false)] public bool Step { get; set; }
@@ -64,20 +66,6 @@ internal sealed class Trajectory
         if(HoldLast&&toMs>Duration) { double dt=(toMs-Math.Max(fromMs,Duration))/1000; var last=Points[Points.Count-1]; result.Horizontal+=last.Horizontal*dt; result.Vertical+=last.Vertical*dt; }
         return result;
     }
-    internal Trajectory ScaleAxes(double horizontalFactor,double verticalFactor)
-    {
-        if(!ValidFactor(horizontalFactor)||!ValidFactor(verticalFactor))
-            throw new ArgumentException("Use um fator entre 0,1 e 10.");
-        var scaled=Copy();
-        foreach(var point in scaled.Points)
-        {
-            point.Horizontal*=horizontalFactor; point.Vertical*=verticalFactor;
-            if(Math.Abs(point.Horizontal)>5000||Math.Abs(point.Vertical)>10000)
-                throw new ArgumentException("Essa força excede os limites de movimento. Use um fator menor.");
-        }
-        return scaled;
-    }
-    private static bool ValidFactor(double factor) { return !double.IsNaN(factor)&&!double.IsInfinity(factor)&&factor>=0.1&&factor<=10; }
     private double Primitive(double t) { return Step?0:Smooth?t*t*t-0.5*t*t*t*t:t*t/2; }
 }
 

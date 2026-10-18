@@ -45,7 +45,7 @@ internal sealed class PresetBackupService
             {
                 var serializer = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(PresetStore));
                 var store = serializer.ReadObject(stream) as PresetStore;
-                if(store==null||store.FormatVersion!=2||store.Presets==null||store.Presets.Any(p=>!PresetTransferService.IsValidPreset(p))) throw new InvalidDataException("O backup JSON contém dados inválidos.");
+                if(store==null||!PresetService.IsSupportedFormat(store.FormatVersion)||store.Presets==null||store.Presets.Any(p=>!PresetTransferService.IsValidPreset(p))) throw new InvalidDataException("O backup JSON contém dados inválidos.");
                 result=store.Presets;
             }
         }

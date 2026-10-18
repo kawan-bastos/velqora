@@ -1,39 +1,26 @@
 <UserControl x:Class="MacroDoButler.TrajectoryDrawingEditor" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:MacroDoButler">
  <StackPanel>
-  <TextBlock Text="O movimento do macro fica pausado enquanto este painel estiver aberto." Foreground="{StaticResource AccentBrightBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-  <TextBlock Text="Clique para adicionar pontos em ordem. Arraste para ajustar; botão direito remove. O primeiro ponto é a origem do movimento." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,10"/>
-  <WrapPanel Margin="0,0,0,10">
+  <WrapPanel Margin="0,0,0,8">
    <Button Content="Imagem de referência…" Click="LoadImageClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
    <Button Content="Remover imagem" Click="RemoveImageClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
    <Button Content="Desfazer desenho" Click="UndoClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
-   <Button Content="Limpar pontos" Click="ClearClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,0,8"/>
+   <Button Content="Limpar pontos" Click="ClearClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
+   <StackPanel Orientation="Horizontal" Margin="0,0,8,8" VerticalAlignment="Center"><CheckBox x:Name="Invert" IsChecked="True" Content="Inverter movimento" Foreground="{StaticResource TextBrush}" Checked="SettingsChanged" Unchecked="SettingsChanged"/><Button Content="?" Style="{StaticResource HelpIconButtonStyle}" AutomationProperties.Name="Ajuda sobre inverter movimento"><Button.ToolTip><ToolTip><TextBlock Text="Inverte os dois eixos para compensar o recuo desenhado. Trace na ordem do disparo: primeiro ponto = início, último = fim. Girar a imagem muda apenas a referência." TextWrapping="Wrap" MaxWidth="340"/></ToolTip></Button.ToolTip></Button></StackPanel>
   </WrapPanel>
-  <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
-   <StackPanel>
-    <TextBlock Text="Ajustar imagem de referência" FontWeight="SemiBold" Margin="0,0,0,8"/>
-    <WrapPanel>
-     <TextBlock Text="Zoom" VerticalAlignment="Center" Margin="0,0,10,8"/>
-     <Slider x:Name="ImageZoom" Width="200" Minimum="1" Maximum="6" Value="1" SmallChange="0.1" LargeChange="0.5" ValueChanged="ImageViewChanged" Margin="0,0,10,8" VerticalAlignment="Center" AutomationProperties.Name="Zoom da imagem"/>
-     <TextBlock x:Name="ImageZoomText" Text="100%" Width="55" VerticalAlignment="Center" Margin="0,0,12,8"/>
-     <Button Content="Girar 180°" Click="RotateImageClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
-     <Button Content="Ajustar imagem à área" Click="ResetImageViewClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,0,8"/>
-    </WrapPanel>
-    <WrapPanel>
-     <CheckBox x:Name="ImageFlipVertical" Content="Espelhar imagem na vertical" Foreground="{StaticResource TextBrush}" Checked="ImageViewChanged" Unchecked="ImageViewChanged" Margin="0,0,20,8"/>
-     <CheckBox x:Name="ImageFlipHorizontal" Content="Espelhar imagem na horizontal" Foreground="{StaticResource TextBrush}" Checked="ImageViewChanged" Unchecked="ImageViewChanged" Margin="0,0,0,8"/>
-    </WrapPanel>
-    <TextBlock Text="Roda do mouse: zoom na imagem. Shift + arrastar ou botão do meio: reposicionar. Estes ajustes movem apenas a referência; os pontos já desenhados ficam no lugar." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedBrush}"/>
-   </StackPanel>
-  </Border>
+  <WrapPanel Margin="0,0,0,8">
+   <TextBlock Text="Zoom" VerticalAlignment="Center" Margin="0,0,10,8"/>
+   <Slider x:Name="ImageZoom" Width="160" Minimum="1" Maximum="6" Value="1" SmallChange="0.1" LargeChange="0.5" ValueChanged="ImageViewChanged" Margin="0,0,10,8" VerticalAlignment="Center" AutomationProperties.Name="Zoom da imagem"/>
+   <TextBlock x:Name="ImageZoomText" Text="100%" Width="50" VerticalAlignment="Center" Margin="0,0,8,8"/>
+   <Button Content="Girar 180°" Click="RotateImageClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,8"/>
+   <Button Content="Ajustar imagem" Click="ResetImageViewClick" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,0,8"/>
+   <StackPanel VerticalAlignment="Center" Margin="0,0,0,8"><Button Content="?" Style="{StaticResource HelpIconButtonStyle}" AutomationProperties.Name="Ajuda sobre a imagem"><Button.ToolTip><ToolTip><TextBlock Text="Roda do mouse: zoom. Shift + arrastar ou botão do meio: reposicionar a imagem. Girar e ajustar afetam apenas a referência; os pontos ficam no lugar. A imagem é temporária e não é salva no preset." TextWrapping="Wrap" MaxWidth="340"/></ToolTip></Button.ToolTip></Button></StackPanel>
+  </WrapPanel>
+  <StackPanel Orientation="Horizontal" Margin="0,0,0,8"><TextBlock Text="Desenho" FontWeight="SemiBold"/><Button Content="?" Style="{StaticResource HelpIconButtonStyle}" AutomationProperties.Name="Ajuda sobre desenhar"><Button.ToolTip><ToolTip><TextBlock Text="Clique para adicionar pontos em ordem. Arraste para ajustar; botão direito remove. O primeiro ponto é a origem. O macro fica pausado enquanto este painel estiver aberto. Aplicar atualiza o teste antes de salvar; Desfazer no editor permite comparar." TextWrapping="Wrap" MaxWidth="340"/></ToolTip></Button.ToolTip></Button></StackPanel>
   <local:TrajectoryDrawingCanvas x:Name="Surface" Height="330" Focusable="True" AutomationProperties.Name="Desenhar trajetória por pontos"/>
   <WrapPanel Margin="0,12,0,0">
-   <StackPanel Margin="0,0,16,10"><TextBlock Text="Duração total (ms)" Margin="0,0,0,5"/><TextBox x:Name="DurationInput" Width="150" Text="1000" Style="{StaticResource FieldStyle}" TextChanged="SettingsChanged" AutomationProperties.Name="Duração do desenho"/></StackPanel>
-   <StackPanel Margin="0,0,16,10"><TextBlock Text="Força do desenho (px/unidade)" Margin="0,0,0,5"/><TextBox x:Name="ScaleInput" Width="190" Text="1" Style="{StaticResource FieldStyle}" TextChanged="SettingsChanged" AutomationProperties.Name="Escala do desenho"/></StackPanel>
-   <CheckBox x:Name="Invert" IsChecked="True" Content="Desenho representa o recuo — inverter movimento" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" Checked="SettingsChanged" Unchecked="SettingsChanged" Margin="0,8,0,10"/>
+   <StackPanel Margin="0,0,16,10"><StackPanel Orientation="Horizontal" Margin="0,0,0,5"><TextBlock Text="Duração (ms)"/><Button Content="?" Style="{StaticResource HelpIconButtonStyle}" AutomationProperties.Name="Ajuda sobre duração"><Button.ToolTip><ToolTip><TextBlock x:Name="DrawingTimingHelp" Text="Tempo total do desenho: de 100 a 60000 ms. O tempo é distribuído pelo comprimento dos trechos." TextWrapping="Wrap" MaxWidth="340"/></ToolTip></Button.ToolTip></Button></StackPanel><TextBox x:Name="DurationInput" Width="150" Text="1000" Style="{StaticResource FieldStyle}" TextChanged="SettingsChanged" AutomationProperties.Name="Duração do desenho"/></StackPanel>
+   <StackPanel Margin="0,0,16,10"><StackPanel Orientation="Horizontal" Margin="0,0,0,5"><TextBlock Text="Escala"/><Button Content="?" Style="{StaticResource HelpIconButtonStyle}" AutomationProperties.Name="Ajuda sobre escala"><Button.ToolTip><ToolTip><TextBlock Text="Escala inteira de 1 a 10. Pixels de movimento por unidade desenhada. Na área de 600 × 360 unidades, escala 1 converte 100 unidades em 100 px. Aumentar a escala aumenta os dois eixos. Não altera o zoom da imagem." TextWrapping="Wrap" MaxWidth="340"/></ToolTip></Button.ToolTip></Button></StackPanel><TextBox x:Name="ScaleInput" Width="150" Text="1" Style="{StaticResource FieldStyle}" TextChanged="SettingsChanged" AutomationProperties.Name="Escala do desenho"/></StackPanel>
   </WrapPanel>
-  <TextBlock Text="Desenhe na ordem do disparo: ponto 1 = INÍCIO; último ponto = FIM. Se você traçar o recuo subindo, marque inverter movimento para a compensação descer. Girar a imagem não inverte o movimento nem a ordem dos pontos." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource AccentBrightBrush}" Margin="0,0,0,8"/>
-  <TextBlock x:Name="DrawingTimingHelp" Text="Área de 600 × 360 unidades. Escala 1: 100 unidades desenhadas = 100 px de movimento. O tempo é distribuído pelo comprimento dos trechos. O movimento passa pelos pontos e termina em zero." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedBrush}"/>
-  <WrapPanel Margin="0,12,0,0"><Button Content="Aplicar desenho ao rascunho" Click="ApplyClick" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,12,8"/><TextBlock x:Name="DrawingStatus" VerticalAlignment="Center" Foreground="{StaticResource AccentBrightBrush}" TextWrapping="Wrap"/></WrapPanel>
-  <TextBlock Text="Experimental • a imagem fica só como referência nesta sessão. Aplicar atualiza o teste temporário do macro. Use Desfazer para comparar e Salvar no preset para manter." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,5,0,0"/>
+  <WrapPanel Margin="0,4,0,0"><Button Content="Aplicar desenho" Click="ApplyClick" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,12,8"/><TextBlock x:Name="DrawingStatus" VerticalAlignment="Center" Foreground="{StaticResource AccentBrightBrush}" TextWrapping="Wrap"/></WrapPanel>
  </StackPanel>
 </UserControl>

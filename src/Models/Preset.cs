@@ -5,8 +5,9 @@ using System.Runtime.Serialization;
 internal enum WeaponSlot { Primary, Secondary }
 
 [DataContract]
-internal sealed class Preset
+internal sealed class Preset : IExtensibleDataObject
 {
+    public ExtensionDataObject ExtensionData { get; set; }
     [DataMember(Name="primaryTrajectory", EmitDefaultValue=false)] public Trajectory PrimaryTrajectory { get; set; }
     [DataMember(Name="secondaryTrajectory", EmitDefaultValue=false)] public Trajectory SecondaryTrajectory { get; set; }
     [DataMember(Name="gameName", EmitDefaultValue=false)]

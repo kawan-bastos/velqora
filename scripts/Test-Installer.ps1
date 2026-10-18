@@ -1,8 +1,8 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([Parameter(Mandatory)][string]$Iscc, [string]$Payload)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-if (-not $Payload) { $Payload = Join-Path $root 'dist' }
+if (-not $Payload) { $Payload = Join-Path $root 'publish\Release' }
 $Payload = (Resolve-Path -LiteralPath $Payload).Path
 $registry = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{12F2AD76-5E8D-409F-B24B-974879DD2EF4}_is1'
 $shortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'Velqora Installer Test.lnk'
@@ -18,7 +18,7 @@ $presetFixture = Join-Path $target 'presets.cfg'
 $version = [string]$props.Project.PropertyGroup.Version
 & $Iscc /DSmokeTest "/DSmokePresetFile=$presetFixture" "/DAppVersion=$version" "/DPayload=$Payload" "/DOutput=$target\package" (Join-Path $root 'installer\Velqora.iss')
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao compilar fixture com identidade isolada.' }
-$Installer = Join-Path $target "package\Velqora-Setup-v$version.exe"
+$Installer = Join-Path $target "package\Velqora-Setup-Windows-v$version.exe"
 function Install-Test([switch]$Update) {
     $arguments = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/TASKS=desktopicon', ('/DIR="' + $target + '"'), ('/LOG="' + $target + '\setup.log"'))
     if ($Update) { $arguments += '/UPDATE' }
@@ -35,6 +35,8 @@ try {
     Assert-Test (Test-Path -LiteralPath $stagedPreset) 'Arquivo de presets escolhido preparado para a primeira abertura'
     Assert-Test ((Get-FileHash -LiteralPath $stagedPreset -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $presetFixture -Algorithm SHA256).Hash) 'Arquivo de presets copiado sem alteração'
     Assert-Test (Test-Path $registry) 'Entrada em Aplicativos instalados'
+    Assert-Test ((Get-ItemProperty -Path $registry).DisplayName -eq 'Velqora Installer Test') 'Nome do aplicativo sem versão duplicada'
+    Assert-Test ((Get-ItemProperty -Path $registry).DisplayVersion -eq $version) 'Versão mantida no campo próprio'
     $registeredUninstaller = (Get-ItemProperty -Path $registry).UninstallString.Trim('"')
     Assert-Test (Test-Path -LiteralPath $registeredUninstaller) 'Desinstalador registrado e acessível'
     Write-Host 'START: Bloqueio de segunda instalação'

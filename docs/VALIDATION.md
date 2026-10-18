@@ -1,4 +1,30 @@
-# Validação do instalador Velqora 3.2.0
+# Validação do Velqora 3.3.0
+
+Verificações executadas em Windows em 18/10/2026. Os testes usam dados sintéticos e uma identidade isolada para o instalador. A geração do pacote não instala nem modifica o aplicativo real.
+
+| Verificação | Resultado |
+|---|---|
+| Build WPF após reorganizar janela e tema | Release normal e cópia limpa; 0 avisos e 0 erros |
+| Trajetórias e persistência | 164 verificações |
+| Conversão automática de força 3.2 → 3.3 | 92 verificações: backup exato, dados básicos/avançados, tempos, flags, jogos vazios, retry, corrupção, campos desconhecidos e idempotência |
+| Edição temporária de presets | 28 verificações |
+| Migração de diretórios e canal de atualização | 30 verificações |
+| Atalhos globais | 8 verificações |
+| Atualizador HTTP local e rollback | 24 verificações; código agora incluído em `tests/UpdateTests.cs` |
+| Interface WPF e tooltips | 312 verificações; renderização em 1100 e 885 px |
+| Setup com identidade de teste | Instalação limpa, atualização, duas formas de desinstalar, atalhos, backups e isolamento dos dados passaram |
+| Nome em Aplicativos instalados | Sem versão no nome; `DisplayVersion` mantém 3.3.0 |
+| Pacote oficial | `publish/Release/`; checksums SHA-256 conferidos; sem presets, preferências, PDBs ou certificados |
+| Propriedades de versão | Produto 3.3.0; arquivo 3.3.0.0 |
+| Assinatura digital | Não assinado; situação registrada no pacote |
+
+Os testes do atualizador usam apenas um servidor em 127.0.0.1. A suíte do instalador registra temporariamente **Velqora Installer Test**, preserva a instalação real e remove sua própria entrada e atalhos ao terminar. Fixtures e logs ficam em `build-check/` para inspeção.
+
+O movimento físico no jogo, o aceite interativo do UAC, combinações de DPI/alto contraste e uma atualização baixada de uma release pública continuam sendo verificações manuais. Não são inferidos dos testes sintéticos.
+
+## Histórico: validação da 3.2.0
+
+Resultados anteriores, preservados para referência.
 
 Executado em Windows, com Inno Setup 6.7.3 verificado por assinatura Authenticode e SHA-256. Os testes automatizados usam arquivos sintéticos e uma identidade de instalador separada da instalação Velqora real. Nenhum preset real foi alterado.
 

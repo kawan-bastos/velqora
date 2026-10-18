@@ -21,7 +21,7 @@ internal static class PresetEditingTests
         Reject(()=>blank.SecondaryInterval=0);
         var invalidSecondary=new PresetEditDraft(new Preset { IntervalMilliseconds=7, SecondaryIntervalMilliseconds=0 });
         Assert(invalidSecondary.SecondaryInterval==7,"Invalid secondary interval is not repaired in editor");
-        var repository = new PresetService(root);
+        var repository = new PresetService(root,false);
         repository.SaveGame("Game");
         blank.Name="Empty";
         PresetEditingService.Save(repository,null,blank.ToPreset(),()=>{});

@@ -30,6 +30,7 @@ DisableProgramGroupPage=yes
 DisableDirPage=no
 PrivilegesRequired=lowest
 SetupIconFile=..\assets\Velqora.ico
+UninstallDisplayName={#ProductName}
 UninstallDisplayIcon={app}\Velqora.exe
 OutputDir={#Output}
 OutputBaseFilename=Velqora-Setup-Windows-v{#AppVersion}
@@ -114,7 +115,10 @@ begin
 end;
 
 function InitializeSetup: Boolean;
-var Release: Cardinal; Uninstaller: String; ExitCode: Integer; I: Integer; HasSmokeUninstallFlag: Boolean;
+var Release: Cardinal; Uninstaller: String; ExitCode: Integer;
+#ifdef SmokeTest
+  I: Integer; HasSmokeUninstallFlag: Boolean;
+#endif
 begin
   Result := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full', 'Release', Release);
   if Result then Result := Release >= 528040;

@@ -2,6 +2,8 @@
 
 Aplicativo desktop para Windows, feito em WPF com .NET Framework 4.8. O macro aplica movimentos relativos do mouse usando perfis configuráveis e atalhos globais.
 
+Versão atual: **3.3.0**. Veja o [mapa das pastas](docs/PROJECT-STRUCTURE.md), o [índice da documentação](docs/README.md) e as [notas da versão](docs/releases/v3.3.0.md).
+
 ## Começar
 
 Na janela principal, escolha um jogo e um preset. Os controles exibem os valores do perfil ativo. Clique em **Salvar** para criar ou atualizar o preset; **Excluir** remove o perfil selecionado após confirmação.
@@ -10,15 +12,11 @@ Os perfis mantêm valores separados para arma primária e secundária. Use o bot
 
 ## Configurações
 
-Abra a engrenagem no topo da janela. As opções são organizadas em três abas:
+Abra **Configurações** na barra lateral. A página reúne atalhos globais, aparência, dados e segurança, atualizações e informações do aplicativo. Em **Dados e segurança**, o botão **Abrir local do arquivo** abre a pasta dos presets, atalhos e backups no Explorador.
 
-- **Atalhos:** altera os atalhos globais e restaura os valores padrão.
-- **Macro:** configura o intervalo de atualização e se o botão direito também precisa estar pressionado.
-- **Dados e backup:** importa, exporta e restaura presets.
+### Intervalo por arma
 
-### Intervalo global
-
-O intervalo é compartilhado por todos os presets e permanece selecionado ao trocar de perfil. O valor permitido é de 2 a 50 ms; o padrão é 7 ms. A preferência é salva em `%LOCALAPPDATA%\Velqora\macro-settings.json`.
+Cada preset mantém o intervalo das armas primária e secundária. O intervalo aceito é de 2 a 50 ms; presets novos começam em 2 ms. Editar um preset permite testar os ajustes antes de salvar.
 
 ### Atalhos globais
 
@@ -35,11 +33,11 @@ As preferências ficam em `%LOCALAPPDATA%\Velqora\hotkeys.json`. Falhas de permi
 
 ## Ajustes do macro
 
-- **Força vertical:** velocidade do movimento vertical, de 0 a 10.000 px/s.
-- **Correção lateral:** movimento horizontal, de -5.000 a 5.000 px/s; valores negativos movem para a esquerda e positivos para a direita.
+- **Força vertical:** valor inteiro de 0 a 100; uma unidade equivale a 100 px/s.
+- **Correção lateral:** valor inteiro de -500 a 500; uma unidade equivale a 10 px/s; valores negativos movem para a esquerda e positivos para a direita.
 - **Exigir botão direito pressionado:** quando ativado, o macro só atua enquanto os botões esquerdo e direito estiverem pressionados.
 
-Os valores das armas e a opção do botão direito pertencem ao preset. O intervalo, por outro lado, é geral e compartilhado por todos eles.
+Os valores das armas e a opção do botão direito pertencem ao preset. Os intervalos também são salvos por arma no preset.
 
 ## Presets, importação e backups
 
@@ -59,7 +57,7 @@ No PowerShell, na pasta do projeto, execute:
 .\build.ps1
 ```
 
-O executável e o arquivo de configuração são copiados para `dist\`. Também é possível compilar diretamente:
+O executável e o arquivo de configuração são copiados para `dist\portable\`. Também é possível compilar diretamente:
 
 ```powershell
 dotnet build MacroDoButler.csproj -c Release
@@ -67,16 +65,16 @@ dotnet build MacroDoButler.csproj -c Release
 
 ## Atualizações
 
-Para instalações feitas pelo Setup, a seção **Atualizações** verifica, baixa e valida o novo instalador. Após confirmar, o aplicativo fecha e abre o Setup no modo de atualização para concluir a troca no mesmo local. Ao abrir manualmente `Velqora-Setup-vX.Y.Z.exe` quando o aplicativo já está instalado, o Setup pergunta se deseja desinstalar. **Não** encerra o Setup sem alterações; **Sim** desinstala e encerra, preservando presets e configurações. Para instalar novamente, abra o Setup outra vez. O identificador fixo permite detectar a instalação do mesmo usuário. Downgrade no modo de atualização exige confirmação e é bloqueado no modo silencioso. A interface mostra a versão instalada e o caminho dos dados, sem link para o repositório.
+Para instalações feitas pelo Setup, a seção **Atualizações** verifica, baixa e valida o novo instalador. Após confirmar, o aplicativo fecha e abre o Setup no modo de atualização para concluir a troca no mesmo local. Ao abrir manualmente `Velqora-Setup-Windows-vX.Y.Z.exe` quando o aplicativo já está instalado, o Setup pergunta se deseja desinstalar. **Não** encerra o Setup sem alterações; **Sim** desinstala e encerra, preservando presets e configurações. Para instalar novamente, abra o Setup outra vez. O identificador fixo permite detectar a instalação do mesmo usuário. Downgrade no modo de atualização exige confirmação e é bloqueado no modo silencioso. A interface mostra a versão instalada e oferece o botão para abrir a pasta de dados, sem exibir o caminho completo na página.
 
-A versão portátil mantém o atualizador de executável, com download condicionado a SHA-256 válido. Assets `Velqora.exe` e `Velqora.sha256` continuam sendo gerados por compatibilidade. Uma instalação feita pelo Setup baixa `Velqora-Setup-vX.Y.Z.exe`, confere a entrada correspondente em `SHA256SUMS.txt` e executa o instalador somente depois de fechar o aplicativo. A opção de abrir após a atualização é oferecida no fim do Setup. A consulta automática verifica novidades, mas não instala nem ativa o macro.
+A versão portátil mantém o atualizador de executável, com download condicionado a SHA-256 válido. Assets `Velqora.exe` e `Velqora.sha256` continuam sendo gerados por compatibilidade. Uma instalação feita pelo Setup baixa `Velqora-Setup-Windows-vX.Y.Z.exe`, confere a entrada correspondente em `SHA256SUMS.txt` e executa o instalador somente depois de fechar o aplicativo. A opção de abrir após a atualização é oferecida no fim do Setup. A consulta automática verifica novidades, mas não instala nem ativa o macro.
 
 Antes de substituir arquivos, o Setup copia executáveis e configurações anteriores para `<pasta de instalação>\previous-versions\<data-hora>`, verificando SHA-256. Essa pasta permanece até remoção manual, inclusive após desinstalação. Se a instalação falhar, consulte a mensagem do Setup e reinstale o pacote anterior. Para recuperação manual, feche o aplicativo e copie o executável e seu `.config` do mesmo backup para a pasta de instalação. Não restaure os dados pessoais automaticamente: versões antigas podem não entender formatos novos. Não há confirmação automática de saúde após a primeira abertura.
 
 ## Estrutura do projeto
 
-- `MainWindow.xaml` e `MainWindow.xaml.cs`: interface, presets e integração do macro.
-- `Themes/Controls.xaml`: estilos e controles visuais do tema.
+- `src/UI/MainWindow.xaml` e `src/UI/MainWindow.xaml.cs`: interface, presets e integração do macro.
+- `src/UI/Themes/Controls.xaml`: estilos e controles visuais do tema.
 - `src/Models/Preset.cs`: modelo dos presets.
 - `src/Services/PresetService.cs`: leitura, migração e gravação dos presets.
 - `src/Services/PresetOrganizationService.cs`: organização e validação dos presets.
@@ -107,7 +105,7 @@ Os dados ativos ficam em `%LOCALAPPDATA%\Velqora`: `presets.json`, `presets.cfg`
 
 Na primeira abertura, `UserDataService` procura preferências em `%LOCALAPPDATA%\MacroDoButler` e arquivos junto do executável. Instalações anteriores que já gravaram `legacy-data-source.txt` continuam compatíveis. Cria snapshots em `migration-backups\`, verifica a cópia por SHA-256 e só então copia os arquivos ausentes para o novo local. Destinos existentes prevalecem; conflitos permanecem recuperáveis nos snapshots. Só conclui a inicialização após toda a migração; uma falha impede abrir com dados parcialmente migrados e pode ser repetida. `.migration-complete` evita reimportação e duplicação nas próximas aberturas. Os originais nunca são removidos. A conversão de CFG para JSON mantém o CFG e sua cópia anterior. O arquivo escolhido no Setup é copiado para `pending-imports\`, importado na abertura seguinte e removido dessa área somente após sucesso.
 
-Se já abriu a versão nova e depois encontrou outra pasta antiga, use **Importar presets** ou transfira os arquivos manualmente com o programa fechado; o marcador impede reimportar silenciosamente uma fonte diferente. Para reinstalar, basta manter essa pasta de dados. Para removê-la manualmente, feche o aplicativo, confira o caminho exibido na interface, faça uma cópia se desejar e exclua **somente** `%LOCALAPPDATA%\Velqora`. Isso também remove snapshots e backups internos, mas não os originais da instalação antiga.
+Se já abriu a versão nova e depois encontrou outra pasta antiga, use **Importar presets** ou transfira os arquivos manualmente com o programa fechado; o marcador impede reimportar silenciosamente uma fonte diferente. Para reinstalar, basta manter essa pasta de dados. Para removê-la manualmente, feche o aplicativo, use **Configurações → Dados e segurança → Abrir local do arquivo**, faça uma cópia se desejar e exclua **somente** `%LOCALAPPDATA%\Velqora`. Isso também remove snapshots e backups internos, mas não os originais da instalação antiga.
 
 `Velqora.exe` é o nome principal. O namespace `MacroDoButler`, o nome do projeto, a URL do repositório e o mutex antigo permanecem por compatibilidade. Ao instalar na mesma pasta que contenha `Macro do Butler.exe` ou `Macro.do.Butler.exe`, o Setup preserva uma cópia anterior e atualiza também esse nome com o novo binário: atalhos externos existentes continuam abrindo o Velqora. Não procura nem modifica atalhos arbitrários em outros diretórios. Se escolher outro destino, a versão portátil antiga permanecerá lá; atualize seus atalhos e evite alternar entre versões. Instaladores antigos de terceiros, com outro identificador, não são removidos automaticamente.
 
@@ -119,7 +117,7 @@ O projeto usa a licença MIT atual. Ela permite que terceiros usem, copiem e red
 
 ## Gerar a distribuição
 
-A versão central é `Directory.Build.props` (atualmente 3.2.0). Ela alimenta propriedades do executável, UI, instalador, nomes dos artefatos e notas automáticas. A tag deve corresponder exatamente a `vMAJOR.MINOR.PATCH`.
+A versão central é `Directory.Build.props` (atualmente 3.3.0). Ela alimenta propriedades do executável, UI, instalador, nomes dos artefatos e notas automáticas. A tag deve corresponder exatamente a `vMAJOR.MINOR.PATCH`.
 
 ```powershell
 # Baixa o compilador oficial, confere SHA-256 e assinatura antes de executá-lo:
@@ -129,11 +127,13 @@ A versão central é `Directory.Build.props` (atualmente 3.2.0). Ela alimenta pr
 .\scripts\build-installer.ps1 -Iscc 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
 ```
 
-Saídas: `dist\Velqora.exe`, `dist\Velqora.exe.config` quando não estiverem em uso, e uma nova pasta `dist\release-<id>\` por build, com o Setup, executáveis, checksums e `SIGNING-STATUS.txt`. Somente a pasta indicada no fim do script é publicável. O pacote usa uma lista explícita do executável, seu `.config` e `LICENSE.txt`; não usa glob da instalação nem inclui presets, backups, logs, PDBs ou certificados. A pasta `dist` pode conter builds anteriores e não deve ser publicada inteira.
+A pasta oficial é **`publish/Release/`**. Ela contém o Setup 3.3.0, executáveis, configurações, licença, notas da versão e checksums. Cada build completo arquiva a release anterior em `publish/Antigo/Release-<data>-<id>/`, preservando todos os arquivos antigos. Os arquivos intermediários ficam em `dist/staging/`; o build portátil simples fica em `dist/portable/`.
+
+Somente `publish/Release/` deve ser usada para distribuir a versão atual. O pacote usa uma lista explícita de arquivos e não inclui presets, backups, logs, PDBs ou certificados. Os binários e históricos locais não são enviados ao Git. O build local gera o pacote; somente o push de uma tag de versão dispara a publicação no GitHub.
 
 O processo é repetível por script; o compilador Inno está fixado e validado. Não se promete identidade binária de instaladores produzidos em horários/ambientes diferentes, especialmente após timestamp de assinatura. A preparação requer internet; a instalação final não requer download.
 
-O workflow compila em Release, testa migração/instalação, assina quando configurado, calcula hashes finais e preserva o artefato `Velqora-Windows`. Push de uma tag correspondente publica uma release; builds de branch/PR não publicam. Releases existentes não são sobrescritas. Criar/enviar a tag é uma ação de publicação e exige autorização do responsável. Nenhum commit, push, tag ou release foi feito nesta implementação.
+O workflow compila em Release, testa migração/instalação, assina quando configurado, calcula hashes finais e preserva o artefato `Velqora-Windows`. Push de uma tag correspondente publica uma release; builds de branch/PR não publicam. Releases existentes não são sobrescritas. Criar/enviar a tag é uma ação de publicação e exige autorização do responsável. O envio de commits para `main` valida e empacota o projeto, sem publicar uma release. Tags de versão são uma ação separada de publicação.
 
 ## Assinatura digital
 
@@ -155,10 +155,10 @@ No GitHub, configure **Settings → Secrets and variables → Actions** com `VEL
 Para conferir os arquivos recebidos:
 
 ```powershell
-Get-FileHash .\Velqora-Setup-v3.2.0.exe -Algorithm SHA256
-Get-AuthenticodeSignature .\Velqora-Setup-v3.2.0.exe
+Get-FileHash .\Velqora-Setup-Windows-v3.3.0.exe -Algorithm SHA256
+Get-AuthenticodeSignature .\Velqora-Setup-Windows-v3.3.0.exe
 signtool verify /pa /all /tw .\Velqora.exe
-signtool verify /pa /all /tw .\Velqora-Setup-v3.2.0.exe
+signtool verify /pa /all /tw .\Velqora-Setup-Windows-v3.3.0.exe
 ```
 
 Confira também a guia **Assinaturas Digitais** nas propriedades. Assinatura válida não garante que o SmartScreen deixe de avisar imediatamente: reputação e políticas do Windows também influenciam. Não desative proteções para instalar.
@@ -173,3 +173,7 @@ Consulte [docs/VALIDATION.md](docs/VALIDATION.md) para resultados executados e c
 ### Trajetórias avançadas
 
 A seção **Avançada** permite editar uma trajetória temporal por preset e por arma, com prévia animada interna, interpolação e fase final explícita. Os presets básicos continuam compatíveis. Consulte o [guia de configuração, arquitetura e testes](docs/advanced-trajectory.md).
+
+### Migração para 3.3
+
+Na primeira abertura, presets da 3.2 são convertidos automaticamente para as unidades inteiras. A força vertical usa 100 px/s por unidade; a lateral usa 10 px/s. O arredondamento pode ajustar ligeiramente a força. Nomes, jogos, armas, pontos e tempos são preservados. Um backup completo fica em `migration-backups/`, e `forceUnitsVersion: 1` registra a conversão para não repeti-la. Importações e restaurações também seguem a regra de inteiros. Detalhes e testes estão no [guia de trajetórias](docs/advanced-trajectory.md).

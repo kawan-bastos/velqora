@@ -28,13 +28,13 @@ namespace MacroDoButler
             AdvancedDetails.Visibility=advanced?Visibility.Visible:Visibility.Collapsed;
             VerticalLabel.Text=advanced?"Vertical • faixa da trajetória":"Força vertical";
             HorizontalLabel.Text=advanced?"Horizontal • faixa da trajetória":"Correção lateral";
-            VerticalValue.Text=advanced?Range(trajectory,false):Format(vertical)+" px/s";
-            HorizontalValue.Text=advanced?Range(trajectory,true):Format(horizontal)+" px/s";
+            VerticalValue.Text=advanced?Range(trajectory,false):Format(vertical)+" de força";
+            HorizontalValue.Text=advanced?Range(trajectory,true):Format(horizontal,true)+" de força";
             if(advanced)
             {
                 TrajectoryInfo.Text=trajectory.Points.Count+" pontos • "+trajectory.Duration+" ms • interpolação "+trajectory.InterpolationName;
                 var last=trajectory.Points[trajectory.Points.Count-1];
-                TrajectoryEnding.Text=trajectory.HoldLast?"Ao terminar: mantém H "+Format(last.Horizontal)+" / V "+Format(last.Vertical)+" px/s":"Ao terminar: zero movimento";
+                TrajectoryEnding.Text=trajectory.HoldLast?"Ao terminar: mantém H "+Format(last.Horizontal,true)+" / V "+Format(last.Vertical)+" de força":"Ao terminar: zero movimento";
             }
             var displayed=advanced?trajectory:null;
             if(!ReferenceEquals(MiniPlot.Value,displayed)) { MiniPlot.Value=displayed; MiniPlot.Rebuild(); }
@@ -43,8 +43,8 @@ namespace MacroDoButler
         {
             var values=trajectory.Points.Select(p=>horizontal?p.Horizontal:p.Vertical);
             double min=values.Min(), max=values.Max();
-            return (min==max?Format(min):Format(min)+" a "+Format(max))+" px/s";
+            return (min==max?Format(min,horizontal):Format(min,horizontal)+" a "+Format(max,horizontal))+" de força";
         }
-        private static string Format(double value) { return value.ToString("0.##",CultureInfo.CurrentCulture); }
+        private static string Format(double value,bool horizontal=false) { return ForceUnits.Format(value,horizontal); }
     }
 }

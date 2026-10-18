@@ -31,7 +31,7 @@ namespace MacroDoButler
                     IntervalMilliseconds = 2, SecondaryIntervalMilliseconds = 2,
                     RequireRightButton = true
                 };
-                editDraft = new PresetEditDraft(initial, preset == null);
+                editDraft = new PresetEditDraft(ForceUnits.RoundedCopy(initial), preset == null);
                 editDraft.PropertyChanged += EditDraft_PropertyChanged;
                 EditorPage.DataContext = editDraft;
                 EditorFeedback.Text = string.Empty;
@@ -79,12 +79,16 @@ namespace MacroDoButler
             EditorPage.DataContext = null;
             EditorFeedback.Text = string.Empty;
         }
+        private void EditorValidationError(object sender, ValidationErrorEventArgs e)
+        {
+            if(EditorFeedback!=null) EditorFeedback.Text=e.Action==ValidationErrorEventAction.Added?System.Convert.ToString(e.Error.ErrorContent):FirstEditorError(EditorPage) ?? string.Empty;
+        }
         private void EditorSave_Click(object sender, RoutedEventArgs e)
         {
             if (editDraft == null) return;
             // Moving focus commits the current textbox before validation.
             ((Button)sender).Focus();
-            if (HasEditorErrors(EditorPage)) { EditorFeedback.Text = "Corrija os campos numéricos destacados antes de salvar."; return; }
+            if (HasEditorErrors(EditorPage)) { EditorFeedback.Text = FirstEditorError(EditorPage) ?? "Confira o valor destacado."; return; }
             try
             {
                 var saved = editDraft.ToPreset();
@@ -102,6 +106,16 @@ namespace MacroDoButler
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
                 if (HasEditorErrors(VisualTreeHelper.GetChild(node, i))) return true;
             return false;
+        }
+        private static string FirstEditorError(DependencyObject node)
+        {
+            if(Validation.GetHasError(node)) return System.Convert.ToString(Validation.GetErrors(node)[0].ErrorContent);
+            for(int i=0;i<VisualTreeHelper.GetChildrenCount(node);i++)
+            {
+                var error=FirstEditorError(VisualTreeHelper.GetChild(node,i));
+                if(error!=null)return error;
+            }
+            return null;
         }
         private void Window_Closing(object sender, CancelEventArgs e)
         {

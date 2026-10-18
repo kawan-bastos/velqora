@@ -47,7 +47,7 @@ internal static class TrajectoryTests
   negative.Step(negativeSettings,true,false,0.01); double negativeSum=0; for(int i=0;i<100;i++)negativeSum+=negative.Step(negativeSettings,true,false,0.01).Horizontal;
   Near(negativeSum,-10,"Negative fractional movement retained");
   string dir=Path.Combine(Path.GetFullPath(args[0]),Guid.NewGuid().ToString("N")); Directory.CreateDirectory(dir);
-  var repo=new PresetService(dir); repo.SaveGame("Game"); var preset=new Preset { Name="Old",GameName="Game",PrimaryVertical=350,IntervalMilliseconds=7,RequireRightButton=true };
+  var repo=new PresetService(dir,false); repo.SaveGame("Game"); var preset=new Preset { Name="Old",GameName="Game",PrimaryVertical=350,IntervalMilliseconds=7,RequireRightButton=true };
   repo.SaveByIdentity(preset); Check(repo.LoadAll()[0].PrimaryTrajectory==null,"Legacy loads without trajectory");
   var original=repo.LoadAll()[0]; var copy=PresetEditingService.Copy(original); copy.PrimaryTrajectory=Pattern(); copy.SecondaryTrajectory=Pattern(); copy.SecondaryTrajectory.HoldLast=true;
   PresetEditingService.Save(repo,original,copy,()=>{}); var loaded=repo.LoadAll()[0]; Check(loaded.PrimaryVertical==350&&loaded.PrimaryTrajectory.Enabled&&loaded.SecondaryTrajectory.HoldLast,"Additive storage round trip");
@@ -89,16 +89,6 @@ internal static class TrajectoryTests
   Near(stepped.Integrate(990,1010).Vertical,6,"Step integrates across discontinuity");
   double steppedSum=0; for(int ms=0;ms<2000;ms+=17)steppedSum+=stepped.Integrate(ms,Math.Min(2000,ms+17)).Vertical;
   Near(steppedSum,600,"Step independent of interval");
-  var scaled=stepped.ScaleAxes(2,2);
-  Near(scaled.Integrate(0,2000).Vertical,1200,"Strength doubles displacement");
-  Near(scaled.Evaluate(1000).Vertical,500,"Strength scales step values");
-  Check(scaled.Step&&scaled.Duration==stepped.Duration,"Strength preserves mode and timing");
-  Near(stepped.Points[0].Vertical,350,"Strength does not mutate source");
-  Near(stepped.ScaleAxes(0.5,0.5).Integrate(0,2000).Vertical,300,"Half strength");
-  bool tooStrong=false; try { stepped.ScaleAxes(100,1); } catch(ArgumentException) { tooStrong=true; } Check(tooStrong,"Invalid multiplier rejected");
-  var maxed=stepped.Copy(); maxed.Points[0].Vertical=10000;
-  tooStrong=false; try { maxed.ScaleAxes(2,2); } catch(ArgumentException) { tooStrong=true; } Check(tooStrong,"Unsafe scaled speed rejected");
-  Near(maxed.Points[0].Vertical,10000,"Failed scale preserves source");
   foreach(bool invert in new[]{false,true}) {
    var stepDrawing=DrawingTrajectoryConverter.Convert(drawn,2000,0.5,invert,false,true); double sign=invert?-1:1;
    Check(stepDrawing.Step&&stepDrawing.Points.Count==drawn.Count,"Step drawing uses one velocity per segment");
@@ -117,24 +107,6 @@ internal static class TrajectoryTests
   var stepClone=PresetEditingService.Copy(stepLoaded); Check(stepClone.PrimaryTrajectory.Step,"Step copied");
   stepClone.PrimaryTrajectory.Step=false; Check(!PresetEditingService.SameContent(stepLoaded,stepClone),"Step changes included in conflict detection");
   transfer.Export(export,new List<Preset> { stepLoaded }); Check(transfer.ReadAndValidate(export)[0].PrimaryTrajectory.Step,"Step survives export/import");
-  foreach(var pattern in new[]{Pattern(),stepped}) {
-   var onlyHorizontal=pattern.ScaleAxes(2,1);
-   var onlyVertical=pattern.ScaleAxes(1,0.5);
-   for(int i=0;i<pattern.Points.Count;i++) {
-    Near(onlyHorizontal.Points[i].Horizontal,2*pattern.Points[i].Horizontal,"Horizontal adjustment scales horizontal");
-    Check(onlyHorizontal.Points[i].Vertical==pattern.Points[i].Vertical,"Horizontal adjustment preserves vertical exactly");
-    Check(onlyVertical.Points[i].Horizontal==pattern.Points[i].Horizontal,"Vertical adjustment preserves horizontal exactly");
-    Near(onlyVertical.Points[i].Vertical,0.5*pattern.Points[i].Vertical,"Vertical adjustment scales vertical");
-    Check(onlyHorizontal.Points[i].TimeMs==pattern.Points[i].TimeMs&&onlyVertical.Points[i].TimeMs==pattern.Points[i].TimeMs,"Axis adjustment preserves timestamps");
-   }
-   var beforeAxis=pattern.Integrate(0,pattern.Duration);
-   var afterHorizontal=onlyHorizontal.Integrate(0,pattern.Duration);
-   var afterVertical=onlyVertical.Integrate(0,pattern.Duration);
-   Near(afterHorizontal.Vertical,beforeAxis.Vertical,"Horizontal adjustment preserves vertical displacement");
-   Near(afterHorizontal.Horizontal,2*beforeAxis.Horizontal,"Horizontal displacement adjusted");
-   Near(afterVertical.Horizontal,beforeAxis.Horizontal,"Vertical adjustment preserves horizontal displacement");
-   Near(afterVertical.Vertical,0.5*beforeAxis.Vertical,"Vertical displacement adjusted");
-  }
   var flowing=DrawingTrajectoryConverter.Convert(drawn,2000,0.5,false,true);
   for(int i=1;i<drawn.Count-1;i++) {
    int at=flowing.Points[2*i].TimeMs;
@@ -168,6 +140,27 @@ internal static class TrajectoryTests
   var repairedClone=PresetEditingService.Copy(stepLoaded); repairedClone.Name="Continuous drawing"; repairedClone.PrimaryTrajectory=repairedDrawing;
   repo.SaveByIdentity(repairedClone); var reloadedSmooth=repo.LoadAll().Single(p=>p.Name=="Continuous drawing").PrimaryTrajectory;
   Near(reloadedSmooth.Evaluate(500).Vertical,repairedDrawing.Evaluate(500).Vertical,"Continuous passage persists in existing format");
+  var protectedDirectory=Path.Combine(dir,"protected-format");
+  var protectedRepo=new PresetService(protectedDirectory,false); protectedRepo.SaveGame("Game");
+  var basicOnly=new Preset { GameName="Game",Name="Basic",IntervalMilliseconds=7 };
+  protectedRepo.SaveByIdentity(basicOnly);
+  Check(File.ReadAllText(protectedRepo.FilePath).Contains("\"formatVersion\":2"),"Basic store stays v2 compatible");
+  basicOnly.PrimaryTrajectory=Pattern(); protectedRepo.SaveByIdentity(basicOnly);
+  Check(File.ReadAllText(protectedRepo.FilePath).Contains("\"formatVersion\":3"),"Advanced store requires protective v3 format");
+  var newBackup=new PresetBackupService(protectedRepo.FilePath); var newBackupPath=newBackup.CreateBackup();
+  Check(newBackup.ReadAndValidate(newBackupPath)[0].PrimaryTrajectory.Enabled,"V3 backups retain advanced trajectory");
+  string oldAdvanced=File.ReadAllText(protectedRepo.FilePath).Replace("\"formatVersion\":3","\"formatVersion\":2");
+  File.WriteAllText(protectedRepo.FilePath,oldAdvanced);
+  Check(protectedRepo.LoadAll()[0].PrimaryTrajectory.Enabled,"Legacy v2 advanced store remains readable");
+  protectedRepo.SaveByIdentity(protectedRepo.LoadAll()[0]);
+  Check(File.ReadAllText(protectedRepo.FilePath).Contains("\"formatVersion\":3"),"Saving v2 advanced upgrades protectively");
+  var protectedExport=Path.Combine(protectedDirectory,"advanced-export.json");
+  transfer.Export(protectedExport,protectedRepo.LoadAll());
+  Check(File.ReadAllText(protectedExport).Contains("\"formatVersion\":3"),"Advanced exports cannot be silently imported by v2-only app");
+  Check(transfer.ReadAndValidate(protectedExport)[0].PrimaryTrajectory.Enabled,"V3 export import keeps data");
+  var normalBasicCopy=PresetEditingService.Copy(protectedRepo.LoadAll()[0]); normalBasicCopy.PrimaryVertical=123;
+  PresetEditingService.Save(protectedRepo,protectedRepo.LoadAll()[0],normalBasicCopy,()=>newBackup.CreateBackup());
+  Check(protectedRepo.LoadAll()[0].PrimaryTrajectory.Points.Count==3,"Basic editing preserves advanced data");
   Console.WriteLine("Trajectory: "+count+" checks passed. Fixtures: "+dir);
  }
 }
