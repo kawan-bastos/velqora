@@ -25,7 +25,7 @@ internal sealed class UpdateService
     internal string LastDownloadedFile { get; private set; }
     internal UpdateService(string currentVersion,string executable,string dataDirectory):this(currentVersion,executable,dataDirectory,ReleasesApi){}
     internal UpdateService(string currentVersion,string executable,string dataDirectory,string releasesApi){this.currentVersion=currentVersion;this.executable=executable;installDirectory=Path.GetDirectoryName(executable);this.dataDirectory=dataDirectory;this.releasesApi=releasesApi;}
-    private static HttpClient CreateClient(){var c=new HttpClient();c.Timeout=TimeSpan.FromSeconds(20);c.DefaultRequestHeaders.UserAgent.ParseAdd("Velqora-Updater/3.2");return c;}
+    private static HttpClient CreateClient(){var c=new HttpClient();c.Timeout=TimeSpan.FromSeconds(20);c.DefaultRequestHeaders.UserAgent.ParseAdd("Velqora-Updater/"+typeof(UpdateService).Assembly.GetName().Version.ToString(3));return c;}
     internal async Task<UpdateInfo> CheckAsync(CancellationToken token)
     {
         try

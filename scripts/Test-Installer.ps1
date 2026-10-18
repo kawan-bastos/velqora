@@ -19,6 +19,12 @@ $version = [string]$props.Project.PropertyGroup.Version
 & $Iscc /DSmokeTest "/DSmokePresetFile=$presetFixture" "/DAppVersion=$version" "/DPayload=$Payload" "/DOutput=$target\package" (Join-Path $root 'installer\Velqora.iss')
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao compilar fixture com identidade isolada.' }
 $Installer = Join-Path $target "package\Velqora-Setup-Windows-v$version.exe"
+# An older package uses the same test-only identity and must never reach file installation.
+$olderVersion='3.2.0'
+& $Iscc /Q /DSmokeTest "/DSmokePresetFile=$presetFixture" "/DAppVersion=$olderVersion" "/DPayload=$Payload" "/DOutput=$target\downgrade-package" (Join-Path $root 'installer\Velqora.iss')
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao compilar fixture de downgrade.' }
+$OlderInstaller = Join-Path $target "downgrade-package\Velqora-Setup-Windows-v$olderVersion.exe"
+
 function Install-Test([switch]$Update) {
     $arguments = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/TASKS=desktopicon', ('/DIR="' + $target + '"'), ('/LOG="' + $target + '\setup.log"'))
     if ($Update) { $arguments += '/UPDATE' }
@@ -28,6 +34,24 @@ function Install-Test([switch]$Update) {
     if ($process.ExitCode -ne 0) { throw "Instalador retornou $($process.ExitCode). Consulte $target\setup.log" }
 }
 function Assert-Test([bool]$Value, [string]$Message) { if (-not $Value) { throw $Message }; Write-Host "PASS: $Message" }
+function Assert-DowngradeBlocked([string]$InstallPath,[string]$Scenario,[switch]$Update) {
+    $beforeFiles=@{}
+    foreach($name in @('Velqora.exe','presets.json','presets.cfg','hotkeys.json')) {
+        $path=Join-Path $InstallPath $name
+        if(Test-Path -LiteralPath $path) { $beforeFiles[$name]=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash }
+    }
+    $wasRegistered=Test-Path $registry
+    $downgradeLog=Join-Path $target ("downgrade-$Scenario.log")
+    $arguments=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/DIR="'+$InstallPath+'"'),('/LOG="'+$downgradeLog+'"'))
+    if($Update) { $arguments+='/UPDATE' }
+    $process=Start-Process -FilePath $OlderInstaller -ArgumentList $arguments -WindowStyle Hidden -Wait -PassThru
+    Assert-Test ($process.ExitCode -ne 0) "Downgrade silencioso bloqueado: $Scenario"
+    Assert-Test ((Get-Content -LiteralPath $downgradeLog -Raw) -match 'Downgrade blocked:') "Incompatibilidade registrada no log: $Scenario"
+    foreach($name in $beforeFiles.Keys) {
+        Assert-Test ((Test-Path -LiteralPath (Join-Path $InstallPath $name)) -and ((Get-FileHash -LiteralPath (Join-Path $InstallPath $name) -Algorithm SHA256).Hash -eq $beforeFiles[$name])) "Downgrade preserva $name ($Scenario)"
+    }
+    Assert-Test ((Test-Path $registry) -eq $wasRegistered) "Registro da instalação preservado: $Scenario"
+}
 try {
     Install-Test
     Assert-Test (Test-Path -LiteralPath "$target\Velqora.exe") 'Instalação limpa em caminho com espaços'
@@ -39,6 +63,13 @@ try {
     Assert-Test ((Get-ItemProperty -Path $registry).DisplayVersion -eq $version) 'Versão mantida no campo próprio'
     $registeredUninstaller = (Get-ItemProperty -Path $registry).UninstallString.Trim('"')
     Assert-Test (Test-Path -LiteralPath $registeredUninstaller) 'Desinstalador registrado e acessível'
+    Set-Content -LiteralPath (Join-Path $target 'presets.json') -Value '{"formatVersion":3,"presets":[]}'
+    Assert-DowngradeBlocked $target 'installed'
+    Assert-DowngradeBlocked $target 'update' -Update
+    Move-Item -LiteralPath (Join-Path $target 'Velqora.exe') -Destination (Join-Path $target 'Velqora.exe.test-preserved')
+    try { Assert-DowngradeBlocked $target 'registered-version-fallback' -Update }
+    finally { Move-Item -LiteralPath (Join-Path $target 'Velqora.exe.test-preserved') -Destination (Join-Path $target 'Velqora.exe') }
+
     Write-Host 'START: Bloqueio de segunda instalação'
     $repeat = Start-Process -FilePath $Installer -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART', ('/DIR="' + $target + '"'), ('/LOG="' + $target + '\repeat.log"')) -WindowStyle Hidden -Wait -PassThru
     Write-Host "DONE: bloqueio (exit code $($repeat.ExitCode))"
@@ -91,3 +122,11 @@ Assert-Test (-not (Test-Path -LiteralPath $smokeData)) 'Remoção explícita ati
 Assert-Test (Test-Path -LiteralPath (Join-Path $sibling 'sentinel.txt')) 'Diretório vizinho preservado'
 Remove-Item -LiteralPath (Join-Path $sibling 'sentinel.txt')
 Remove-Item -LiteralPath $sibling
+
+# A portable executable is detected even without a registered installation.
+$portable=Join-Path $target 'portable-newer'
+New-Item -ItemType Directory -Path $portable | Out-Null
+Copy-Item -LiteralPath (Join-Path $Payload 'Velqora.exe') -Destination (Join-Path $portable 'Velqora.exe')
+Set-Content -LiteralPath (Join-Path $portable 'presets.json') -Value '{"formatVersion":3,"presets":[]}'
+Assert-DowngradeBlocked $portable 'portable' -Update
+Assert-Test (!(Test-Path -LiteralPath (Join-Path $portable 'previous-versions'))) 'Downgrade interrompido antes de copiar ou substituir arquivos'

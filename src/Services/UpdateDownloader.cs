@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 internal sealed class UpdateDownloader
 {
     private static readonly HttpClient Client = CreateClient();
-    private static HttpClient CreateClient(){var c=new HttpClient();c.Timeout=TimeSpan.FromMinutes(10);c.DefaultRequestHeaders.UserAgent.ParseAdd("Velqora-Updater/3.2");return c;}
+    private static HttpClient CreateClient(){var c=new HttpClient();c.Timeout=TimeSpan.FromMinutes(10);c.DefaultRequestHeaders.UserAgent.ParseAdd("Velqora-Updater/"+typeof(UpdateDownloader).Assembly.GetName().Version.ToString(3));return c;}
     internal async Task<string> DownloadAsync(UpdateInfo info, IProgress<double> progress, CancellationToken token)
     {
         if (string.IsNullOrWhiteSpace(info.Sha256) || !System.Text.RegularExpressions.Regex.IsMatch(info.Sha256, "\\A[0-9a-fA-F]{64}\\z"))

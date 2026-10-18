@@ -27,8 +27,8 @@ Apenas a trajetória convertida é salva no preset. Os pontos originais do desen
 Para compilar o protótipo em pasta separada:
 
 ```powershell
-dotnet build MacroDoButler.csproj -c Release -warnaserror -p:UseSharedCompilation=false -p:OutputPath=build-check/migration-3.3/
-powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File scripts/Test-TrajectoryEditor.ps1 -AssemblyPath "$PWD/build-check/migration-3.3/Velqora.exe"
+dotnet build MacroDoButler.csproj -c Release -warnaserror -p:UseSharedCompilation=false -p:OutputPath=build-check/migration-4.0/
+powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File scripts/Test-TrajectoryEditor.ps1 -AssemblyPath "$PWD/build-check/migration-4.0/Velqora.exe"
 ```
 
 ## Escala de força
@@ -94,7 +94,7 @@ Não use uma cópia antiga para editar dados avançados. Caso abra uma versão a
 
 Os valores configuráveis de força e escala do desenho são inteiros. A interpolação e a integração continuam usando precisão fracionária internamente para manter a passagem suave e acumular movimento corretamente.
 
-## Atualização automática da 3.2 para a 3.3
+## Atualização automática da 3.2 para a 4.0
 
 A leitura do repositório executa a migração antes de carregar presets ou iniciar o serviço de movimento. JSONs nos formatos 2 e 3 são aceitos; o CFG legado mantém o fluxo de cópia de segurança e recebe os mesmos arredondamentos ao gerar o JSON.
 
@@ -110,3 +110,5 @@ Os testes de migração usam apenas arquivos sintéticos:
 dotnet build tests/PresetForceMigrationTests.csproj -c Release -warnaserror -p:UseSharedCompilation=false
 & tests/bin/Release/net48/PresetForceMigrationTests.exe
 ```
+
+Os protótipos locais identificados como 3.3 usam os mesmos formatos de dados da 4.0. O marcador `forceUnitsVersion` não muda com a versão comercial: saves já convertidos não são arredondados ou migrados novamente ao instalar a 4.0.

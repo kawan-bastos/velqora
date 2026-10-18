@@ -49,10 +49,10 @@ internal static class MigrationTests
         catch (UpdateException) { missingHashRejected = true; }
         Check(missingHashRejected, "unverified download rejected before network access");
         string digest = new string('a', 64);
-        string sums = new string('b', 64) + "  Velqora.exe\n" + digest + "  Velqora-Setup-v3.3.0.exe\n";
-        Check(UpdateService.ParseChecksum(sums, "Velqora-Setup-v3.3.0.exe") == digest, "installer checksum matched by exact filename");
+        string sums = new string('b', 64) + "  Velqora.exe\n" + digest + "  Velqora-Setup-Windows-v4.0.0.exe\n";
+        Check(UpdateService.ParseChecksum(sums, "Velqora-Setup-Windows-v4.0.0.exe") == digest, "installer checksum matched by exact filename");
         bool wrongPackageRejected = false;
-        try { UpdateService.ParseChecksum(sums, "Velqora-Setup-v3.4.0.exe"); } catch (UpdateException) { wrongPackageRejected = true; }
+        try { UpdateService.ParseChecksum(sums, "Velqora-Setup-Windows-v4.1.0.exe"); } catch (UpdateException) { wrongPackageRejected = true; }
         Check(wrongPackageRejected, "wrong installer checksum rejected");
         string installed = Path.Combine(root, "installed"); Directory.CreateDirectory(installed);
         File.WriteAllText(Path.Combine(installed, "unins000.exe"), "synthetic");

@@ -3,7 +3,7 @@
 - [Estrutura e responsabilidade das pastas](PROJECT-STRUCTURE.md)
 - [Editor avançado, desenho, unidades de força e migração](advanced-trajectory.md)
 - [Verificações executadas e limitações](VALIDATION.md)
-- [Notas do Velqora 3.3.0](releases/v3.3.0.md)
+- [Notas do Velqora 4.0.0](releases/v4.0.0.md)
 - [Instalação, atualização, assinatura e uso](../README.md)
 - [Como contribuir](../CONTRIBUTING.md)
 

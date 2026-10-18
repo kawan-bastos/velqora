@@ -76,6 +76,7 @@ var
   PresetFilePage: TInputFileWizardPage;
   HadSpaced, HadDotted: Boolean;
   RemoveData: Boolean;
+  DowngradeConsentKey: String;
 
 function LegacySpaced: Boolean;
 begin Result := HadSpaced; end;
@@ -114,6 +115,31 @@ begin
     end;
 end;
 
+function ConfirmDowngrade(ExecutablePath: String; UseRegisteredVersion: Boolean): Boolean;
+var OldVersion, ConsentKey: String; OldPacked, NewPacked: Int64;
+begin
+  Result := True;
+  if not GetVersionNumbersString(ExecutablePath, OldVersion) then begin
+    if not UseRegisteredVersion then exit;
+    if not RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#ProductId}_is1', 'DisplayVersion', OldVersion) then exit;
+  end;
+  if not StrToVersion(OldVersion, OldPacked) or not StrToVersion('{#AppVersion}.0', NewPacked) then exit;
+  if ComparePackedVersion(OldPacked, NewPacked) <= 0 then exit;
+  ConsentKey := LowerCase(ExecutablePath) + '|' + OldVersion;
+  if DowngradeConsentKey = ConsentKey then exit;
+  Result := False;
+  if WizardSilent then begin
+    Log('Downgrade blocked: installed ' + OldVersion + ', requested {#AppVersion}. Presets from newer versions may be incompatible.');
+    exit;
+  end;
+  Result := SuppressibleMsgBox('Você está tentando voltar do Velqora ' + OldVersion + ' para a versão {#AppVersion}.' + #13#10#13#10 +
+    'Presets salvos por versões mais novas podem não abrir na versão anterior. Por exemplo, a 3.2 não reconhece os presets avançados da 4.0.' + #13#10#13#10 +
+    'Seus arquivos serão preservados, mas não serão convertidos para o formato antigo. Antes de continuar, exporte uma cópia pelo aplicativo atual.' + #13#10#13#10 +
+    'Para continuar usando os presets atuais, escolha Não e mantenha a versão mais nova.' + #13#10#13#10 +
+    'Deseja continuar com a versão anterior?', mbConfirmation, MB_YESNO or MB_DEFBUTTON2, IDNO) = IDYES;
+  if Result then DowngradeConsentKey := ConsentKey;
+end;
+
 function InitializeSetup: Boolean;
 var Release: Cardinal; Uninstaller: String; ExitCode: Integer;
 #ifdef SmokeTest
@@ -126,7 +152,12 @@ begin
     SuppressibleMsgBox('O Velqora requer .NET Framework 4.8 ou superior. Instale o pacote oficial da Microsoft e execute este instalador novamente. Nenhum download será iniciado automaticamente.', mbError, MB_OK, IDOK);
     exit;
   end;
-  if not InstalledUninstaller(Uninstaller) or IsApplicationUpdate then exit;
+  if not InstalledUninstaller(Uninstaller) then exit;
+  if not ConfirmDowngrade(AddBackslash(ExtractFileDir(Uninstaller)) + 'Velqora.exe', True) then begin
+    Result := False;
+    exit;
+  end;
+  if IsApplicationUpdate then exit;
   Result := False;
   if WizardSilent then begin
 #ifdef SmokeTest
@@ -217,17 +248,10 @@ begin
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
-var OldVersion: String; OldPacked, NewPacked: Int64;
 begin
   Result := True;
-  if CurPageID = wpSelectDir then begin
-    if GetVersionNumbersString(ExpandConstant('{app}\Velqora.exe'), OldVersion) then
-      if StrToVersion(OldVersion, OldPacked) and StrToVersion('{#AppVersion}.0', NewPacked) then
-        if ComparePackedVersion(OldPacked, NewPacked) > 0 then begin
-          if WizardSilent then Result := False
-          else Result := SuppressibleMsgBox('A versão instalada é ' + OldVersion + '. Confirma instalar uma versão anterior? Os dados podem não ser compatíveis.', mbConfirmation, MB_YESNO or MB_DEFBUTTON2, IDNO) = IDYES;
-        end;
-  end;
+  if CurPageID = wpSelectDir then
+    Result := ConfirmDowngrade(ExpandConstant('{app}\Velqora.exe'), False);
   if CurPageID = PresetFilePage.ID then begin
     Result := FileExists(PresetFilePage.Values[0]) and
       ((LowerCase(ExtractFileExt(PresetFilePage.Values[0])) = '.json') or
@@ -240,6 +264,10 @@ function PrepareToInstall(var NeedsRestart: Boolean): String;
 var Backup, Name: String; I: Integer;
 begin
   Result := '';
+  if not ConfirmDowngrade(ExpandConstant('{app}\Velqora.exe'), False) then begin
+    Result := 'A instalação da versão anterior foi cancelada. Presets de versões mais novas podem ser incompatíveis. Mantenha a versão mais nova para continuar usando seus presets.';
+    exit;
+  end;
   HadSpaced := FileExists(ExpandConstant('{app}\Macro do Butler.exe'));
   HadDotted := FileExists(ExpandConstant('{app}\Macro.do.Butler.exe'));
   if CheckForMutexes('{#RunningMutex}') then begin
