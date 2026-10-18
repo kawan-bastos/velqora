@@ -5,7 +5,7 @@ Verificações executadas em Windows em 18/10/2026. Os testes usam dados sintét
 | Verificação | Resultado |
 |---|---|
 | Build WPF após reorganizar janela e tema | Release normal e cópia limpa; 0 avisos e 0 erros |
-| Trajetórias e persistência | 164 verificações |
+| Trajetórias e persistência | 170 verificações, incluindo backups distintos no mesmo milissegundo, preservação dos bytes, restauração e retenção |
 | Conversão automática de força 3.2 → 4.0 | 92 verificações: backup exato, dados básicos/avançados, tempos, flags, jogos vazios, retry, corrupção, campos desconhecidos e idempotência |
 | Edição temporária de presets | 28 verificações |
 | Migração de diretórios e canal de atualização | 30 verificações |

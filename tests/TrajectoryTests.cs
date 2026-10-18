@@ -161,6 +161,25 @@ internal static class TrajectoryTests
   var normalBasicCopy=PresetEditingService.Copy(protectedRepo.LoadAll()[0]); normalBasicCopy.PrimaryVertical=123;
   PresetEditingService.Save(protectedRepo,protectedRepo.LoadAll()[0],normalBasicCopy,()=>newBackup.CreateBackup());
   Check(protectedRepo.LoadAll()[0].PrimaryTrajectory.Points.Count==3,"Basic editing preserves advanced data");
+  // The CI runner can save twice within one millisecond. Freeze the clock to
+  // reproduce the collision deterministically, rather than relying on machine speed.
+  var rapidRepo=new PresetService(Path.Combine(dir,"rapid-backups"),false);
+  rapidRepo.SaveByIdentity(new Preset { Name="Rapid",GameName="Game",PrimaryTrajectory=Pattern(),IntervalMilliseconds=7 });
+  var rapidBackup=new PresetBackupService(rapidRepo.FilePath,()=>new DateTime(2026,10,18,6,20,39,395));
+  string firstContents=File.ReadAllText(rapidRepo.FilePath);
+  string firstBackup=rapidBackup.CreateBackup();
+  var rapidOriginal=rapidRepo.LoadAll()[0]; var rapidCandidate=PresetEditingService.Copy(rapidOriginal); rapidCandidate.PrimaryVertical=700;
+  PresetEditingService.Save(rapidRepo,rapidOriginal,rapidCandidate,()=>rapidBackup.CreateBackup());
+  string changedContents=File.ReadAllText(rapidRepo.FilePath);
+  string secondBackup=rapidBackup.CreateBackup();
+  Check(firstBackup!=secondBackup&&rapidBackup.ListBackups().Count==3,"Same-millisecond backups receive unique names");
+  Check(File.ReadAllText(firstBackup)==firstContents,"Rapid saves never overwrite earlier backup bytes");
+  Check(File.ReadAllText(secondBackup)==changedContents,"Later backup contains latest saved values");
+  Check(rapidBackup.ReadAndValidate(firstBackup)[0].PrimaryTrajectory.Points.Count==3,"Rapid backup preserves advanced keyframes");
+  rapidBackup.Restore(firstBackup,rapidRepo);
+  Check(rapidRepo.LoadAll()[0].PrimaryVertical==0&&rapidRepo.LoadAll()[0].PrimaryTrajectory.Enabled,"Same-millisecond backup remains restorable");
+  for(int i=0;i<PresetBackupService.MaximumBackups+2;i++) rapidBackup.CreateBackup();
+  Check(rapidBackup.ListBackups().Count==PresetBackupService.MaximumBackups,"Unique backup names still respect retention limit");
   Console.WriteLine("Trajectory: "+count+" checks passed. Fixtures: "+dir);
  }
 }

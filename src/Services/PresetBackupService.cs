@@ -9,11 +9,13 @@ internal sealed class PresetBackupService
     internal const int MaximumBackups = 10;
     private readonly string sourcePath;
     private readonly string backupDirectory;
+    private readonly Func<DateTime> now;
 
-    internal PresetBackupService(string sourcePath)
+    internal PresetBackupService(string sourcePath, Func<DateTime> now = null)
     {
         this.sourcePath = sourcePath;
         backupDirectory = Path.Combine(Path.GetDirectoryName(sourcePath), "backups");
+        this.now = now ?? (() => DateTime.Now);
     }
 
     internal string CreateBackup()
@@ -21,7 +23,8 @@ internal sealed class PresetBackupService
         if (!File.Exists(sourcePath)) return null;
         Directory.CreateDirectory(backupDirectory);
         string extension = Path.GetExtension(sourcePath);
-        string target = Path.Combine(backupDirectory, "presets_" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss_fff", CultureInfo.InvariantCulture) + extension + ".bak");
+        // Separate saves can share the same clock tick; never reuse or overwrite a backup.
+        string target = Path.Combine(backupDirectory, "presets_" + now().ToString("yyyy-MM-dd_HHmmss_fff", CultureInfo.InvariantCulture) + "_" + Guid.NewGuid().ToString("N") + extension + ".bak");
         File.Copy(sourcePath, target, false);
         PruneOldBackups();
         return target;
