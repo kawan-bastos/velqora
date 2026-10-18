@@ -511,4 +511,30 @@ foreach($label in @('Iniciar','Pausar','Reiniciar','Adicionar ponto','Desfazer',
  Check ($icon.ToString() -ne $fallback) "Action uses confirmation icon: $label"
 }
 Check ($converter.Convert('Iniciar',[object],$null,[Globalization.CultureInfo]::InvariantCulture).ToString() -ne $converter.Convert('Reiniciar',[object],$null,[Globalization.CultureInfo]::InvariantCulture).ToString()) 'Restart has play icon'
-Write-Output "WPF editor: $script:checks checks passed; rendered 1100px and 885px layouts."
+# Resolve the actual logo declarations with MainWindow's compiled XAML base URI.
+# Do not construct MainWindow: its constructor loads user data and starts input.
+[xml]$mainMarkup=[IO.File]::ReadAllText((Join-Path $root 'src\UI\MainWindow.xaml'))
+$logos=@($mainMarkup.SelectNodes('//*[local-name()="Image" and contains(@Source,"Velqora.png")]'))
+Check ($logos.Count -eq 2) 'Sidebar and About logo declarations must both be checked'
+$logoIndex=0
+foreach($logo in $logos) {
+ $context=[Windows.Markup.ParserContext]::new()
+ $context.BaseUri=[Uri]::new(('pack://application:,,,/'+$assembly.GetName().Name+';component/src/UI/MainWindow.xaml'))
+ $markup='<Image xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Source="'+$logo.Source+'" Width="'+$logo.Width+'" Height="'+$logo.Height+'" Stretch="Uniform"/>'
+ $image=[Windows.Markup.XamlReader]::Parse($markup,$context)
+ Check ($image.Source -is [Windows.Media.Imaging.BitmapSource] -and $image.Source.PixelWidth -gt 0) 'Application logo resource failed to decode'
+ $header=[Windows.Controls.StackPanel]::new();$header.Orientation='Horizontal';$header.VerticalAlignment='Center';$header.Margin='22,0,12,0'
+ $header.Children.Add($image) | Out-Null
+ $label=[Windows.Controls.TextBlock]::new();$label.Text='Velqora';$label.FontSize=20;$label.Foreground=[Windows.Media.Brushes]::White;$label.VerticalAlignment='Center';$label.Margin='12,0,0,0'
+ $header.Children.Add($label) | Out-Null
+ $badge=[Windows.Controls.Border]::new();$badge.Background=[Windows.Media.BrushConverter]::new().ConvertFromString('#101517');$badge.Child=$header
+ $badge.Measure([Windows.Size]::new(232,104));$badge.Arrange([Windows.Rect]::new(0,0,232,104));$badge.UpdateLayout()
+ Check ($image.ActualWidth -eq [double]$logo.Width -and $image.ActualHeight -eq [double]$logo.Height) 'Application logo layout is empty'
+ $bitmap=[Windows.Media.Imaging.RenderTargetBitmap]::new(232,104,96,96,[Windows.Media.PixelFormats]::Pbgra32);$bitmap.Render($badge)
+ $pixels=New-Object byte[] (232*104*4);$bitmap.CopyPixels($pixels,232*4,0);$goldPixels=0
+ for($i=0;$i -lt $pixels.Length;$i+=4) { if($pixels[$i+2] -gt 140 -and $pixels[$i+1] -gt 80 -and $pixels[$i] -lt 100) { $goldPixels++ } }
+ Check ($goldPixels -gt 20) 'Application logo renders blank instead of the gold symbol'
+ $encoder=[Windows.Media.Imaging.PngBitmapEncoder]::new();$encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($bitmap))
+ $file=[IO.File]::Create((Join-Path $root ('build-check\branding-logo-'+$logoIndex+'.png')));$encoder.Save($file);$file.Dispose();$logoIndex++
+}
+Write-Output "WPF editor: $script:checks checks passed; rendered 1100px and 885px layouts and application logos."

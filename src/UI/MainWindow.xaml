@@ -55,7 +55,7 @@
                     <Grid>
                         <Grid.RowDefinitions><RowDefinition Height="104" /><RowDefinition Height="*" /><RowDefinition Height="72" /></Grid.RowDefinitions>
                         <StackPanel Orientation="Horizontal" Margin="22,0,12,0" VerticalAlignment="Center">
-                            <Image Source="assets/Velqora.png" Width="38" Height="38" Stretch="Uniform" />
+                            <Image Source="/assets/Velqora.png" Width="38" Height="38" Stretch="Uniform" />
                             <TextBlock Text="Velqora" FontSize="20" FontWeight="SemiBold" Margin="12,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
                         <Border Height="1" Background="#FF292A2B" VerticalAlignment="Bottom" Margin="20,0,16,0" IsHitTestVisible="False" />
@@ -937,7 +937,7 @@
                                         </Grid>
                                         <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,0,0,8"/>
                                         <StackPanel Orientation="Horizontal" Margin="0,10,0,16">
-                                            <Image Source="assets/Velqora.png" Width="48" Height="48" Stretch="Uniform" Margin="0,0,16,0"/>
+                                            <Image Source="/assets/Velqora.png" Width="48" Height="48" Stretch="Uniform" Margin="0,0,16,0"/>
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="V E L Q O R A" Foreground="{StaticResource AccentBrightBrush}" FontSize="14"/>
                                                 <TextBlock Text="{Binding Text, ElementName=InstalledVersionText}" Style="{StaticResource SettingsNoteStyle}" Margin="0,5,0,0"/>

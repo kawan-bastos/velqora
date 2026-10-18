@@ -1,4 +1,16 @@
-# Validação do Velqora 4.0.0
+# Validação do Velqora 4.0.1
+
+Verificações da correção da logo em 18/10/2026:
+
+- Build Release com 0 avisos e 0 erros; produto 4.0.1 e arquivo 4.0.1.0.
+- O teste reproduziu o carregamento vazio usando os caminhos relativos da versão 4.0.0.
+- Após a correção, 319 verificações WPF passaram, incluindo resolução do recurso a partir de `src/UI/MainWindow.xaml`, dimensões das imagens e presença dos pixels dourados na renderização das logos da barra lateral e da seção Sobre.
+- Imagens renderizadas conferidas em `build-check/branding-logo-0.png` e `build-check/branding-logo-1.png`.
+- Setup gerado em `publish/Release/`, com alias compatível com o atualizador 3.2 e checksums SHA-256.
+- Testes do instalador passaram com identidade isolada: instalação, atualização, desinstalação, bloqueio de downgrade e preservação dos dados sintéticos.
+- Atualizador compilado na versão 4.0.1: 32 verificações passaram; SHA-256 dos 9 arquivos listados no pacote conferido.
+
+## Histórico: validação da 4.0.0
 
 Verificações executadas em Windows em 18/10/2026. Os testes usam dados sintéticos e uma identidade isolada para o instalador. A geração do pacote não instala nem modifica o aplicativo real.
 

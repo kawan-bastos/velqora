@@ -2,7 +2,7 @@
 
 Aplicativo desktop para Windows, feito em WPF com .NET Framework 4.8. O macro aplica movimentos relativos do mouse usando perfis configuráveis e atalhos globais.
 
-Versão atual: **4.0.0**. Veja o [mapa das pastas](docs/PROJECT-STRUCTURE.md), o [índice da documentação](docs/README.md) e as [notas da versão](docs/releases/v4.0.0.md).
+Versão atual: **4.0.1**. Veja o [mapa das pastas](docs/PROJECT-STRUCTURE.md), o [índice da documentação](docs/README.md) e as [notas da versão](docs/releases/v4.0.1.md).
 
 ## Começar
 
@@ -117,7 +117,7 @@ O projeto usa a licença MIT atual. Ela permite que terceiros usem, copiem e red
 
 ## Gerar a distribuição
 
-A versão central é `Directory.Build.props` (atualmente 4.0.0). Ela alimenta propriedades do executável, UI, instalador, nomes dos artefatos e notas automáticas. A tag deve corresponder exatamente a `vMAJOR.MINOR.PATCH`.
+A versão central é `Directory.Build.props` (atualmente 4.0.1). Ela alimenta propriedades do executável, UI, instalador, nomes dos artefatos e notas automáticas. A tag deve corresponder exatamente a `vMAJOR.MINOR.PATCH`.
 
 ```powershell
 # Baixa o compilador oficial, confere SHA-256 e assinatura antes de executá-lo:
@@ -127,7 +127,7 @@ A versão central é `Directory.Build.props` (atualmente 4.0.0). Ela alimenta pr
 .\scripts\build-installer.ps1 -Iscc 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
 ```
 
-A pasta oficial é **`publish/Release/`**. Ela contém o Setup 4.0.0, executáveis, configurações, licença, notas da versão e checksums. Cada build completo arquiva a release anterior em `publish/Antigo/Release-<data>-<id>/`, preservando todos os arquivos antigos. Os arquivos intermediários ficam em `dist/staging/`; o build portátil simples fica em `dist/portable/`.
+A pasta oficial é **`publish/Release/`**. Ela contém o Setup 4.0.1, executáveis, configurações, licença, notas da versão e checksums. Cada build completo arquiva a release anterior em `publish/Antigo/Release-<data>-<id>/`, preservando todos os arquivos antigos. Os arquivos intermediários ficam em `dist/staging/`; o build portátil simples fica em `dist/portable/`.
 
 Somente `publish/Release/` deve ser usada para distribuir a versão atual. O pacote usa uma lista explícita de arquivos e não inclui presets, backups, logs, PDBs ou certificados. Os binários e históricos locais não são enviados ao Git. O build local gera o pacote; somente o push de uma tag de versão dispara a publicação no GitHub.
 
@@ -155,10 +155,10 @@ No GitHub, configure **Settings → Secrets and variables → Actions** com `VEL
 Para conferir os arquivos recebidos:
 
 ```powershell
-Get-FileHash .\Velqora-Setup-Windows-v4.0.0.exe -Algorithm SHA256
-Get-AuthenticodeSignature .\Velqora-Setup-Windows-v4.0.0.exe
+Get-FileHash .\Velqora-Setup-Windows-v4.0.1.exe -Algorithm SHA256
+Get-AuthenticodeSignature .\Velqora-Setup-Windows-v4.0.1.exe
 signtool verify /pa /all /tw .\Velqora.exe
-signtool verify /pa /all /tw .\Velqora-Setup-Windows-v4.0.0.exe
+signtool verify /pa /all /tw .\Velqora-Setup-Windows-v4.0.1.exe
 ```
 
 Confira também a guia **Assinaturas Digitais** nas propriedades. Assinatura válida não garante que o SmartScreen deixe de avisar imediatamente: reputação e políticas do Windows também influenciam. Não desative proteções para instalar.
