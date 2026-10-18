@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 internal sealed class UpdateService
 {
-    private const string ReleasesApi="https://api.github.com/repos/kawan-bastos/macro-do-butler/releases/latest";
+    private const string ReleasesApi="https://api.github.com/repos/kawan-bastos/velqora/releases/latest";
     private static readonly HttpClient Client=CreateClient();
     private readonly string currentVersion;
     private readonly string executable;
@@ -45,8 +45,9 @@ internal sealed class UpdateService
                 if(release==null||release.Draft||release.Prerelease)throw new UpdateException("A release mais recente não é uma versão pública estável.");
                 string version=(release.TagName??"").TrimStart('v','V');if(UpdateVersionComparer.Compare(version,currentVersion)<=0){available=null;return null;}
                 bool installer=UsesInstaller;
-                string executableName=installer?"Velqora-Setup-v"+version+".exe":"Velqora.exe";
+                string executableName=installer?"Velqora-Setup-Windows-v"+version+".exe":"Velqora.exe";
                 ReleaseAsset asset=release.Assets==null?null:release.Assets.FirstOrDefault(a=>string.Equals(a.Name,executableName,StringComparison.OrdinalIgnoreCase));
+                if(installer&&asset==null){executableName="Velqora-Setup-v"+version+".exe";asset=release.Assets==null?null:release.Assets.FirstOrDefault(a=>string.Equals(a.Name,executableName,StringComparison.OrdinalIgnoreCase));}
                 if(!installer&&asset==null){asset=release.Assets==null?null:release.Assets.FirstOrDefault(a=>string.Equals(a.Name,"Macro.do.Butler.exe",StringComparison.OrdinalIgnoreCase));executableName="Macro.do.Butler.exe";}
                 if(asset==null)throw new UpdateException("A atualização não contém o pacote compatível com esta instalação.");
                 if(!ValidUrl(release.HtmlUrl)||!ValidUrl(asset.BrowserDownloadUrl)||!string.Equals(new Uri(asset.BrowserDownloadUrl).Host,"github.com",StringComparison.OrdinalIgnoreCase))throw new UpdateException("A release contém uma URL inválida ou não confiável.");

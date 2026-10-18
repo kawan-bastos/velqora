@@ -36,6 +36,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha ao compilar o instalador.' }
 $installer = Join-Path $package "Velqora-Setup-Windows-v$version.exe"
 if (-not (Test-Path -LiteralPath $installer)) { throw 'O instalador não foi criado.' }
 if ($Sign) { & (Join-Path $PSScriptRoot 'Sign-Artifact.ps1') -Path $installer }
+# Version 3.2 looks up this exact name. Copy only after signing so both names
+# contain the same bytes and both are included in SHA256SUMS.txt.
+Copy-Item -LiteralPath $installer -Destination (Join-Path $package "Velqora-Setup-v$version.exe")
 foreach ($name in @('Velqora.exe','Velqora.exe.config')) {
     Copy-Item -LiteralPath (Join-Path $payload $name) -Destination (Join-Path $package $name)
 }

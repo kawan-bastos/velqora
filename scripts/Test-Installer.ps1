@@ -16,6 +16,14 @@ $presetFixture = Join-Path $target 'presets.cfg'
 [System.IO.File]::WriteAllText($presetFixture, '')
 [xml]$props = Get-Content -LiteralPath (Join-Path $root 'Directory.Build.props')
 $version = [string]$props.Project.PropertyGroup.Version
+$canonicalSetup = Join-Path $Payload "Velqora-Setup-Windows-v$version.exe"
+$compatibleSetup = Join-Path $Payload "Velqora-Setup-v$version.exe"
+if ((Get-FileHash -LiteralPath $canonicalSetup -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $compatibleSetup -Algorithm SHA256).Hash) { throw 'O setup compatível com 3.2 precisa ser idêntico ao setup oficial.' }
+$setupChecksums = [IO.File]::ReadAllText((Join-Path $Payload 'SHA256SUMS.txt'))
+foreach ($setupName in @("Velqora-Setup-Windows-v$version.exe","Velqora-Setup-v$version.exe")) {
+    $entry = '(?m)^' + (Get-FileHash -LiteralPath $canonicalSetup -Algorithm SHA256).Hash + '  ' + [regex]::Escape($setupName) + '\r?$'
+    if ($setupChecksums -notmatch $entry) { throw "Checksum do setup ausente ou incorreto: $setupName" }
+}
 & $Iscc /DSmokeTest "/DSmokePresetFile=$presetFixture" "/DAppVersion=$version" "/DPayload=$Payload" "/DOutput=$target\package" (Join-Path $root 'installer\Velqora.iss')
 if ($LASTEXITCODE -ne 0) { throw 'Falha ao compilar fixture com identidade isolada.' }
 $Installer = Join-Path $target "package\Velqora-Setup-Windows-v$version.exe"

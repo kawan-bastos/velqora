@@ -31,6 +31,7 @@ internal static class UpdateHarness
         {
             server.Bytes=Encoding.UTF8.GetBytes("{\"tag_name\":\"v4.0.0\",\"name\":\"Velqora v4.0.0\",\"html_url\":\"https://github.com/owner/repo/releases/tag/v4.0.0\",\"published_at\":\"2026-10-14T17:50:39Z\",\"assets\":[{\"name\":\"Macro.do.Butler.exe\",\"browser_download_url\":\"https://github.com/owner/repo/releases/download/v4.0.0/Macro.do.Butler.exe\",\"size\":700000}]}" );server.StatusCode=200;var service=new UpdateService("3.2.0",Path.Combine(Path.GetTempPath(),"test.exe"),Path.GetTempPath(),server.Url+"api");UpdateInfo found=await service.CheckAsync(CancellationToken.None);Check(found!=null&&found.Version=="4.0.0"&&found.PublishedAt.HasValue,"release API parses version and ISO publication date");
             server.Bytes=Encoding.UTF8.GetBytes("{\"message\":\"API rate limit exceeded\"}");server.StatusCode=403;server.RetryAfter="5";bool rateLimitCaught=false;try{await service.CheckAsync(CancellationToken.None);}catch(UpdateRateLimitException ex){rateLimitCaught=ex.RetryAfterUtc>DateTime.UtcNow.AddSeconds(3)&&ex.RetryAfterUtc<DateTime.UtcNow.AddSeconds(10);}Check(rateLimitCaught,"GitHub rate-limit response carries retry-after guidance");server.StatusCode=200;server.RetryAfter=null;server.Bytes=good;
+            await VerifyAssetSelection(server);server.Bytes=good;
             var downloader=new UpdateDownloader();var info=new UpdateInfo{DownloadUrl=server.Url+"good",FileSize=good.Length,Sha256=Hash(good)};path=await downloader.DownloadAsync(info,null,CancellationToken.None);Check(File.Exists(path)&&new FileInfo(path).Length==good.Length,"HTTP download size/hash validates");File.Delete(path);path=null;
             info.Sha256=new string('0',64);await Throws<UpdateException>(()=>downloader.DownloadAsync(info,null,CancellationToken.None),"bad SHA-256 rejected");
             info.Sha256=Hash(good);info.FileSize=good.Length+1;await Throws<UpdateException>(()=>downloader.DownloadAsync(info,null,CancellationToken.None),"incomplete/mismatched size rejected");
@@ -55,6 +56,33 @@ internal static class UpdateHarness
         }
         finally{Console.WriteLine("Synthetic fixtures: "+root);}
         Console.WriteLine("ASSERTIONS: "+assertions);
+    }
+    private static async Task VerifyAssetSelection(LocalServer server)
+    {
+        string root=Path.Combine(Environment.CurrentDirectory,"build-check","release-selection-"+Guid.NewGuid().ToString("N"));
+        string installed=Path.Combine(root,"installed");Directory.CreateDirectory(installed);File.WriteAllText(Path.Combine(installed,"unins000.exe"),"synthetic installer marker");
+        var service=new UpdateService("3.2.0",Path.Combine(installed,"Velqora.exe"),root,server.Url+"api");
+        foreach(string[] assets in new[] {
+            new[]{"Velqora-Setup-Windows-v4.0.0.exe","Velqora-Setup-v4.0.0.exe"},
+            new[]{"Velqora-Setup-Windows-v4.0.0.exe"},
+            new[]{"Velqora-Setup-v4.0.0.exe"}
+        }) {
+            server.Bytes=ReleaseResponse(assets);
+            var update=await service.CheckAsync(CancellationToken.None);
+            Check(update.IsInstaller&&update.DownloadUrl.EndsWith("/"+assets[0]),"Installed updater selects setup: "+assets[0]+" ("+assets.Length+" assets)");
+        }
+        server.Bytes=ReleaseResponse(new[]{"Velqora.exe","Velqora-Setup-Windows-v4.0.0.exe"});
+        var portable=new UpdateService("3.2.0",Path.Combine(root,"Velqora.exe"),root,server.Url+"api");
+        var portableUpdate=await portable.CheckAsync(CancellationToken.None);
+        Check(!portableUpdate.IsInstaller&&portableUpdate.DownloadUrl.EndsWith("/Velqora.exe"),"Portable updater selects executable rather than setup");
+        server.Bytes=ReleaseResponse(new[]{"Velqora.exe"});bool rejected=false;
+        try{await service.CheckAsync(CancellationToken.None);}catch(UpdateException){rejected=true;}
+        Check(rejected,"Installed updater rejects release without compatible setup");
+    }
+    private static byte[] ReleaseResponse(string[] assets)
+    {
+        string json=string.Join(",",assets.Select(name=>"{\"name\":\""+name+"\",\"browser_download_url\":\"https://github.com/kawan-bastos/velqora/releases/download/v4.0.0/"+name+"\",\"size\":700000}"));
+        return Encoding.UTF8.GetBytes("{\"tag_name\":\"v4.0.0\",\"name\":\"Velqora v4.0.0\",\"html_url\":\"https://github.com/kawan-bastos/velqora/releases/tag/v4.0.0\",\"assets\":["+json+"]}");
     }
     private static async Task Throws<T>(Func<Task<string>> action,string name) where T:Exception{bool thrown=false;try{await action();}catch(T){thrown=true;}Check(thrown,name);}
     private static string BuildInstallerScript(string source,string target,bool restart,string log,int pid,bool keep,int retention){var method=typeof(UpdateInstaller).GetMethod("BuildScript",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static);return (string)method.Invoke(null,new object[]{source,target,restart,log,pid,keep,retention});}

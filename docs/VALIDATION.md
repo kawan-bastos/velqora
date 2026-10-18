@@ -10,12 +10,13 @@ Verificações executadas em Windows em 18/10/2026. Os testes usam dados sintét
 | Edição temporária de presets | 28 verificações |
 | Migração de diretórios e canal de atualização | 30 verificações |
 | Atalhos globais | 8 verificações |
-| Atualizador HTTP local e rollback | 27 verificações; código agora incluído em `tests/UpdateTests.cs` |
+| Atualizador HTTP local e rollback | 32 verificações, incluindo seleção dos nomes atual e legado do setup, preferência pelo pacote oficial e canais instalado/portátil |
 | Interface WPF e tooltips | 312 verificações; renderização em 1100 e 885 px |
 | Setup com identidade de teste | Instalação limpa, atualização, duas formas de desinstalar, atalhos, backups e isolamento dos dados passaram |
 | Downgrade em setups novos | Bloqueio silencioso testado em instalação registrada, `/UPDATE`, versão recuperada do registro e pasta portátil; executável e presets preservados |
 | Nome em Aplicativos instalados | Sem versão no nome; `DisplayVersion` mantém 4.0.0 |
 | Pacote oficial | `publish/Release/`; checksums SHA-256 conferidos; sem presets, preferências, PDBs ou certificados |
+| Compatibilidade com atualizador 3.2 | Alias `Velqora-Setup-v4.0.0.exe` idêntico ao setup oficial; ambos incluídos em `SHA256SUMS.txt` |
 | Propriedades de versão | Produto 4.0.0; arquivo 4.0.0.0 |
 | Assinatura digital | Não assinado; situação registrada no pacote |
 
